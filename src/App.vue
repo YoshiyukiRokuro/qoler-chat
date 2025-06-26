@@ -1,15 +1,24 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div id="chat-container">
+    <ChannelList />
+    <div class="chat-area">
+      <MessageList />
+      <MessageForm />
+    </div>
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import ChannelList from './components/ChannelList.vue'
+import MessageList from './components/MessageList.vue'
+import MessageForm from './components/MessageForm.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    ChannelList,
+    MessageList,
+    MessageForm
   }
 }
 </script>
@@ -19,8 +28,20 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  height: 100vh;
+  margin: 0;
+}
+
+#chat-container {
+  display: flex;
+  height: 100%;
+}
+
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 </style>
