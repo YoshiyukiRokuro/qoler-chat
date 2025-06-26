@@ -27,8 +27,9 @@ const store = createStore({
     user: JSON.parse(localStorage.getItem('user')) || null,
     token: localStorage.getItem('token') || null,
     channels: [
-      { id: 1, name: '連絡' },
-      { id: 2, name: '雑談' }
+      { id: 1, name: 'general' },
+      { id: 2, name: 'random' },
+      { id: 3, name: 'vue' }
     ],
     selectedChannelId: 1,
     messages: {}
@@ -40,13 +41,22 @@ const store = createStore({
     setMessages(state, { channelId, messages }) {
       state.messages[channelId] = messages
     },
-    addMessage(state, message) {
+    addMessage(state, messageData) {
+      const message = messageData.data; // new_messageイベントのdataプロパティ
       const { channelId } = message;
       if (!state.messages[channelId]) {
         state.messages[channelId] = []
       }
       if (!state.messages[channelId].some(m => m.id === message.id)) {
         state.messages[channelId].push(message)
+      }
+    },
+    // メッセージ削除用のミューテーション
+    removeMessage(state, { channelId, messageId }) {
+      if (state.messages[channelId]) {
+        state.messages[channelId] = state.messages[channelId].filter(
+          (m) => m.id !== messageId
+        );
       }
     },
     setUser(state, { user, token }) {
@@ -62,7 +72,7 @@ const store = createStore({
     }
  },
   actions: {
-    initializeWebSocket({ commit }) {
+    initializeWebSocket({ commit, state }) {
       const ws = new WebSocket('ws://192.168.100.37:3000');
 
       ws.onopen = () => console.log('Connected to WebSocket server');
@@ -71,8 +81,20 @@ const store = createStore({
 
       ws.onmessage = (event) => {
         try {
-          const message = JSON.parse(event.data);
-          commit('addMessage', message);
+          const payload = JSON.parse(event.data);
+          
+          // WebSocketで受信したメッセージのタイプに応じて処理を分岐
+          if (payload.type === 'new_message') {
+            commit('addMessage', payload);
+          } else if (payload.type === 'message_deleted') {
+            // 現在開いている全てのチャンネルのメッセージをチェックして削除する
+            Object.keys(state.messages).forEach(channelId => {
+              commit('removeMessage', { 
+                channelId: Number(channelId), 
+                messageId: payload.id 
+              });
+            });
+          }
         } catch (e) {
           console.error('Failed to parse message:', event.data, e);
         }
@@ -131,6 +153,18 @@ const store = createStore({
         });
       } catch (error) {
         console.error('Failed to send message:', error);
+      }
+    },
+    
+    // メッセージ削除アクション
+    async deleteMessage(_, messageId) {
+      try {
+        await apiClient.delete(`/messages/${messageId}`);
+        // 成功した場合、ローカルのstateからの削除はWebSocket経由で行われる
+      } catch (error) {
+        console.error('Failed to delete message:', error);
+        // 必要であれば、ここでエラー通知を行う
+        // 例: toast.error('メッセージの削除に失敗しました。');
       }
     }
   },
