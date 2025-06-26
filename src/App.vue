@@ -12,6 +12,8 @@
 import ChannelList from './components/ChannelList.vue'
 import MessageList from './components/MessageList.vue'
 import MessageForm from './components/MessageForm.vue'
+import { useStore } from 'vuex'
+import { onMounted } from 'vue'
 
 export default {
   name: 'App',
@@ -19,6 +21,15 @@ export default {
     ChannelList,
     MessageList,
     MessageForm
+  },
+  setup() {
+    const store = useStore();
+    onMounted(() => {
+      // アプリ起動時にデフォルトチャンネルのメッセージを読み込む
+      if (store.state.selectedChannelId) {
+        store.dispatch('loadMessages', store.state.selectedChannelId);
+      }
+    });
   }
 }
 </script>

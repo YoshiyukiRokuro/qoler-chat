@@ -1,6 +1,17 @@
 import { createStore } from 'vuex'
 
-export default createStore({
+// WebSocketクライアントのセットアップ
+const ws = new WebSocket('ws://localhost:8081');
+
+ws.onopen = () => {
+  console.log('Connected to WebSocket server');
+};
+
+ws.onclose = () => {
+  console.log('Disconnected from WebSocket server');
+};
+
+const store = createStore({
   state: {
     channels: [
       { id: 1, name: 'general' },
@@ -21,25 +32,38 @@ export default createStore({
       if (!state.messages[channelId]) {
         state.messages[channelId] = []
       }
-      state.messages[channelId].push(message)
+      // 重複を避ける
+      if (!state.messages[channelId].some(m => m.id === message.id)) {
+        state.messages[channelId].push(message)
+      }
     }
   },
   actions: {
-    selectChannel({ commit }, channelId) {
+    // WebSocketサーバーからのメッセージをリッスンするアクション
+    listenForMessages({ commit }) {
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        // 受け取ったメッセージをストアに追加
+        commit('addMessage', { channelId: message.channelId, message });
+      };
+    },
+    selectChannel({ commit, dispatch }, channelId) {
       commit('setSelectedChannel', channelId)
+      dispatch('loadMessages', channelId)
     },
     async loadMessages({ commit }, channelId) {
       const messages = await window.api.getMessages(channelId);
       commit('setMessages', { channelId, messages });
     },
-    async sendMessage({ commit, state }, text) {
+    async sendMessage({ state }, text) { // commitは不要なので削除
       const messageData = {
         channelId: state.selectedChannelId,
         user: 'You', // ユーザー認証実装前は固定
         text: text,
       };
-      const savedMessage = await window.api.addMessage(messageData);
-      commit('addMessage', { channelId: state.selectedChannelId, message: savedMessage });
+      // addMessageを呼び出すだけで、メインプロセスがDB保存とブロードキャストを行う
+      // ブロードキャストされたメッセージはonmessageで受信するので、ここでのcommitは不要
+      await window.api.addMessage(messageData);
     }
   },
   getters: {
@@ -48,3 +72,8 @@ export default createStore({
     messagesForSelectedChannel: state => state.messages[state.selectedChannelId] || []
   }
 })
+
+// アプリケーション初期化時にメッセージの受信を開始
+store.dispatch('listenForMessages');
+
+export default store;

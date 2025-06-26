@@ -5,8 +5,31 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import path from 'path'
 import sqlite3 from 'sqlite3'
+import { WebSocketServer } from 'ws' // wsをインポート
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
+
+// WebSocketサーバーをポート8080で起動
+const wss = new WebSocketServer({ port: 8081 });
+
+// 接続されたクライアントを管理
+wss.on('connection', ws => {
+  console.log('Client connected');
+
+  // クライアントが切断したときの処理
+  ws.on('close', () => {
+    console.log('Client disconnected');
+  });
+});
+
+// 全クライアントにメッセージをブロードキャストする関数
+function broadcast(message) {
+  wss.clients.forEach(client => {
+    if (client.readyState === client.OPEN) {
+      client.send(JSON.stringify(message));
+    }
+  });
+}
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -14,6 +37,7 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 let db;
+let win; // ウィンドウオブジェクトをグローバルで保持
 
 function createDatabase() {
   const dbPath = isDevelopment
@@ -46,15 +70,12 @@ protocol.registerSchemesAsPrivileged([
 
 async function createWindow() {
   // Create the browser window.
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      // Use pluginOptions.nodeIntegration, leave this alone
-      // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
-      // preload.js を指定
       preload: path.join(__dirname, 'preload.js')
     }
   })
@@ -89,6 +110,7 @@ app.on('activate', () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
+  createDatabase(); // データベースを作成または接続
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
@@ -97,7 +119,6 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  createDatabase();
   createWindow();
 })
 
@@ -125,6 +146,8 @@ ipcMain.handle('add-message', async (event, { channelId, user, text }) => {
         if (err) {
           reject(err);
         }
+        // DBに保存後、全クライアントにブロードキャスト
+        broadcast(row);
         resolve(row);
       });
     });
