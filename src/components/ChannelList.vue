@@ -10,6 +10,9 @@
           :class="{ active: channel.id === selectedChannelId }"
         >
           # {{ channel.name }}
+          <span v-if="unreadCounts[channel.id] > 0" class="unread-badge">
+            {{ unreadCounts[channel.id] }}
+          </span>
         </li>
       </ul>
     </div>
@@ -33,40 +36,46 @@
 </template>
 
 <script>
-import { computed } from 'vue'
-import { useStore } from 'vuex'
-import { useRouter } from 'vue-router'
+import { computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
 
 export default {
   name: 'ChannelList',
   setup() {
-    const store = useStore()
-    const router = useRouter()
+    const store = useStore();
+    const router = useRouter();
 
-    const channels = computed(() => store.getters.channels)
-    const selectedChannelId = computed(() => store.state.selectedChannelId)
-    const currentUser = computed(() => store.getters.currentUser)
-    const onlineUsers = computed(() => store.getters.onlineUsers)
+    const channels = computed(() => store.getters.channels);
+    const selectedChannelId = computed(() => store.state.selectedChannelId);
+    const currentUser = computed(() => store.getters.currentUser);
+    const onlineUsers = computed(() => store.getters.onlineUsers);
+    const unreadCounts = computed(() => store.getters.unreadCounts);
 
     const selectChannel = (id) => {
-      store.dispatch('selectChannel', id)
-    }
+      store.dispatch('selectChannel', id);
+    };
 
     const handleLogout = () => {
-      store.dispatch('logout')
-      router.push('/login')
-    }
+      store.dispatch('logout');
+      router.push('/login');
+    };
+
+    onMounted(() => {
+      store.dispatch('fetchUnreadCounts');
+    });
 
     return {
       channels,
       selectedChannelId,
       currentUser,
       onlineUsers,
+      unreadCounts,
       selectChannel,
       handleLogout
-    }
+    };
   }
-}
+};
 </script>
 
 <style scoped>
@@ -96,6 +105,9 @@ li {
   cursor: pointer;
   border-radius: 5px;
   font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 li:hover {
   background-color: #e0e0e0;
@@ -152,5 +164,15 @@ li.active {
 }
 .logout-button:hover {
   background-color: #f0f0f0;
+}
+
+.unread-badge {
+  background-color: #f04747;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 0.75em;
+  font-weight: bold;
+  margin-left: 10px;
 }
 </style>

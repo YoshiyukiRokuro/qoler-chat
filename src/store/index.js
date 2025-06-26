@@ -29,9 +29,30 @@ const store = createStore({
       { id: 3, name: 'vue' }
     ],
     selectedChannelId: 1,
-    messages: {}
+    messages: {},
+    unreadCounts: {}
   },
   mutations: {
+
+    setUnreadCount(state, { channelId, count }) {
+        state.unreadCounts[channelId] = count;
+    },
+    setAllUnreadCounts(state, counts) {
+        state.unreadCounts = counts;
+    },
+    clearUnreadCount(state, channelId) {
+        state.unreadCounts[channelId] = 0;
+    },
+    // 新しいメッセージが来た時に未読カウントを増やす
+    incrementUnreadCount(state, channelId) {
+        if (state.selectedChannelId !== channelId) {
+            if (!state.unreadCounts[channelId]) {
+                state.unreadCounts[channelId] = 0;
+            }
+            state.unreadCounts[channelId]++;
+        }
+    },
+    
     setSelectedChannel(state, channelId) {
       state.selectedChannelId = channelId
     },
@@ -94,6 +115,7 @@ const store = createStore({
           
           if (payload.type === 'new_message') {
             commit('addMessage', payload);
+            commit('incrementUnreadCount', payload.data.channelId); // 未読カウントを増やす
             const message = payload.data;
             if (state.user && state.user.username !== message.user) {
               window.electronAPI.notify({
@@ -119,7 +141,32 @@ const store = createStore({
     selectChannel({ commit, dispatch }, channelId) {
       commit('setSelectedChannel', channelId)
       dispatch('loadMessages', channelId)
+      dispatch('markChannelAsRead', channelId); // チャンネルを既読にする
     },
+
+    // チャンネルのメッセージを既読にするアクション
+    async markChannelAsRead({ state, commit }, channelId) {
+        const messages = state.messages[channelId];
+        if (messages && messages.length > 0) {
+        const lastMessageId = messages[messages.length - 1].id;
+        try {
+            await apiClient.post(`/messages/${channelId}/read`, { lastMessageId });
+            commit('clearUnreadCount', channelId);
+        } catch (error) {
+            console.error('Failed to mark channel as read:', error);
+        }
+        }
+    },
+    // 未読メッセージ数をサーバーから取得するアクション
+    async fetchUnreadCounts({ commit }) {
+        try {
+        const { data } = await apiClient.get('/messages/unread-counts');
+        commit('setAllUnreadCounts', data);
+        } catch (error) {
+        console.error('Failed to fetch unread counts:', error);
+        }
+    },
+
     async loadMessages({ commit }, channelId) {
       try {
         const response = await apiClient.get(`/messages/${channelId}`);
@@ -181,6 +228,7 @@ const store = createStore({
     isAuthenticated: state => !!state.token,
     currentUser: state => state.user,
     onlineUsers: state => state.onlineUsers,
+    unreadCounts: state => state.unreadCounts,
   }
 })
 
