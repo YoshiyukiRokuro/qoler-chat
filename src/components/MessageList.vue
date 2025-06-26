@@ -12,31 +12,24 @@
 </template>
 
 <script>
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed, watch } from 'vue'
 import { useStore } from 'vuex'
 
 export default {
   name: 'MessageList',
   setup() {
     const store = useStore()
-    const messageContainer = ref(null)
-
     const selectedChannel = computed(() => store.getters.selectedChannel)
     const messages = computed(() => store.getters.messagesForSelectedChannel)
 
-    watch(messages, async () => {
-      await nextTick()
-      const container = messageContainer.value
-      if (container) {
-        container.scrollTop = container.scrollHeight
+    watch(selectedChannel, (newChannel) => {
+      if (newChannel) {
+        store.dispatch('loadMessages', newChannel.id)
       }
-    }, { deep: true })
-
-
+    }, { immediate: true })
     return {
       selectedChannel,
-      messages,
-      messageContainer
+      messages
     }
   }
 }
