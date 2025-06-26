@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router' // createWebHistoryをcreateWebHashHistoryに変更
 import store from '../store'
 import ChatView from '../views/ChatView.vue'
 import LoginView from '../views/LoginView.vue'
@@ -18,7 +18,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHashHistory(process.env.BASE_URL),
   routes
 })
 

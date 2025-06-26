@@ -29,7 +29,10 @@ async function createWindow() {
   } else {
     createProtocol('app')
     win.loadURL('app://./index.html')
+    // ↓ この行を追加して、ビルド後も開発者ツールを開く
+    win.webContents.openDevTools() 
   }
+
 }
 
 app.on('window-all-closed', () => {

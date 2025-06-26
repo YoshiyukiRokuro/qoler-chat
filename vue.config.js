@@ -3,6 +3,7 @@ module.exports = defineConfig({
   transpileDependencies: true,
   pluginOptions: {
     electronBuilder: {
+      nodeIntegrationInWorker: true
     }
   }
 })

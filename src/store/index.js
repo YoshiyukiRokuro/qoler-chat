@@ -1,18 +1,31 @@
 // src/store/index.js
 import { createStore } from 'vuex'
-import axios from 'axios' // axiosをインポート
+import axios from 'axios'
 
 // axiosのベースURLを設定
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3000', // サーバーのアドレス
+  baseURL: 'http://192.168.100.37:3000', // サーバーのアドレス
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+// リクエストインターセプターを追加
+apiClient.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, error => {
+  return Promise.reject(error);
+});
+
 const store = createStore({
   state: {
-    user: JSON.parse(localStorage.getItem('user')) || null, // ローカルストレージからユーザー情報を復元
+    // localStorageからユーザー情報とトークンを復元
+    user: JSON.parse(localStorage.getItem('user')) || null,
+    token: localStorage.getItem('token') || null,
     channels: [
       { id: 1, name: 'general' },
       { id: 2, name: 'random' },
@@ -37,18 +50,21 @@ const store = createStore({
         state.messages[channelId].push(message)
       }
     },
-    setUser(state, user) {
+    setUser(state, { user, token }) {
       state.user = user;
-      if (user) {
+      state.token = token;
+      if (user && token) {
         localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', token);
       } else {
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
       }
     }
  },
   actions: {
     initializeWebSocket({ commit }) {
-      const ws = new WebSocket('ws://localhost:3000'); // サーバーのアドレス:ポート
+      const ws = new WebSocket('ws://192.168.100.37:3000');
 
       ws.onopen = () => console.log('Connected to WebSocket server');
       ws.onclose = () => console.log('Disconnected from WebSocket server');
@@ -76,7 +92,6 @@ const store = createStore({
       }
     },
 
-    // registerアクションの引数を再度修正
     async register(_context, { username, password }) {
       try {
         await apiClient.post('/register', { username, password });
@@ -91,7 +106,8 @@ const store = createStore({
     async login({ commit }, { username, password }) {
       try {
         const { data } = await apiClient.post('/login', { username, password });
-        commit('setUser', data.user);
+        // ユーザー情報とトークンを一緒に保存
+        commit('setUser', { user: data.user, token: data.token });
         return true;
       } catch (error) {
         const message = error.response?.data?.error || 'ログインに失敗しました。';
@@ -100,7 +116,8 @@ const store = createStore({
     },
 
     logout({ commit }) {
-      commit('setUser', null);
+      // ユーザー情報とトークンをクリア
+      commit('setUser', { user: null, token: null });
     },
 
     async sendMessage({ state }, text) {
@@ -111,7 +128,7 @@ const store = createStore({
       try {
         await apiClient.post('/messages', {
           channelId: state.selectedChannelId,
-          user: state.user.username, // ログインユーザー名を使用
+          user: state.user.username,
           text: text,
         });
       } catch (error) {
@@ -123,9 +140,9 @@ const store = createStore({
     channels: state => state.channels,
     selectedChannel: state => state.channels.find(c => c.id === state.selectedChannelId),
     messagesForSelectedChannel: state => state.messages[state.selectedChannelId] || [],
-    isAuthenticated: state => !!state.user,
+    // トークンの有無で認証状態を判断
+    isAuthenticated: state => !!state.token,
     currentUser: state => state.user,
-
   }
 })
 
