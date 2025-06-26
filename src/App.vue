@@ -1,36 +1,12 @@
 <template>
-  <div id="chat-container">
-    <ChannelList />
-    <div class="chat-area">
-      <MessageList />
-      <MessageForm />
-    </div>
+  <div id="app-wrapper">
+    <router-view/>
   </div>
 </template>
 
 <script>
-import ChannelList from './components/ChannelList.vue'
-import MessageList from './components/MessageList.vue'
-import MessageForm from './components/MessageForm.vue'
-import { useStore } from 'vuex'
-import { onMounted } from 'vue'
-
 export default {
   name: 'App',
-  components: {
-    ChannelList,
-    MessageList,
-    MessageForm
-  },
-  setup() {
-    const store = useStore();
-    onMounted(() => {
-      // アプリ起動時にデフォルトチャンネルのメッセージを読み込む
-      if (store.state.selectedChannelId) {
-        store.dispatch('loadMessages', store.state.selectedChannelId);
-      }
-    });
-  }
 }
 </script>
 
@@ -43,16 +19,7 @@ export default {
   height: 100vh;
   margin: 0;
 }
-
-#chat-container {
-  display: flex;
-  height: 100%;
-}
-
-.chat-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+#app-wrapper {
   height: 100%;
 }
 </style>
