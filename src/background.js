@@ -1,9 +1,9 @@
-// src/background.js (大幅に簡略化)
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, Notification } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
+const path = require('path') // pathモジュールをインポート
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
@@ -11,15 +11,24 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
 
+// レンダラープロセスから通知の要求を受け取る
+ipcMain.on('notify-message', (event, options) => {
+  new Notification({
+    title: options.title,
+    body: options.body,
+    silent: false // 通知音を鳴らす
+  }).show();
+});
+
 async function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-      contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
-      // preload.jsは不要になったので削除またはコメントアウト
-      // preload: path.join(__dirname, 'preload.js')
+      // preloadスクリプトを有効にし、プロセス間通信を安全に行います
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   })
 
@@ -29,10 +38,9 @@ async function createWindow() {
   } else {
     createProtocol('app')
     win.loadURL('app://./index.html')
-    // ↓ この行を追加して、ビルド後も開発者ツールを開く
-    win.webContents.openDevTools() 
+    // プロダクションビルドで問題が発生した場合は、以下のコメントを解除して開発者ツールでエラーを確認できます
+    // win.webContents.openDevTools()
   }
-
 }
 
 app.on('window-all-closed', () => {

@@ -1,16 +1,13 @@
-// src/store/index.js
 import { createStore } from 'vuex'
 import axios from 'axios'
 
-// axiosのベースURLを設定
 const apiClient = axios.create({
-  baseURL: 'http://192.168.100.37:3000', // サーバーのアドレス
+  baseURL: 'http://192.168.100.37:3000',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// リクエストインターセプターを追加
 apiClient.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -23,10 +20,9 @@ apiClient.interceptors.request.use(config => {
 
 const store = createStore({
   state: {
-    // localStorageからユーザー情報とトークンを復元
     user: JSON.parse(localStorage.getItem('user')) || null,
     token: localStorage.getItem('token') || null,
-    onlineUsers: [], // onlineUsersを追加
+    onlineUsers: [],
     channels: [
       { id: 1, name: 'general' },
       { id: 2, name: 'random' },
@@ -36,11 +32,6 @@ const store = createStore({
     messages: {}
   },
   mutations: {
-    // setOnlineUsersミューテーションを追加
-    setOnlineUsers(state, users) {
-      state.onlineUsers = users;
-    },
-
     setSelectedChannel(state, channelId) {
       state.selectedChannelId = channelId
     },
@@ -48,7 +39,7 @@ const store = createStore({
       state.messages[channelId] = messages
     },
     addMessage(state, messageData) {
-      const message = messageData.data; // new_messageイベントのdataプロパティ
+      const message = messageData.data;
       const { channelId } = message;
       if (!state.messages[channelId]) {
         state.messages[channelId] = []
@@ -57,7 +48,6 @@ const store = createStore({
         state.messages[channelId].push(message)
       }
     },
-    // メッセージ削除用のミューテーション
     removeMessage(state, { channelId, messageId }) {
       if (state.messages[channelId]) {
         state.messages[channelId] = state.messages[channelId].filter(
@@ -75,28 +65,26 @@ const store = createStore({
         localStorage.removeItem('user');
         localStorage.removeItem('token');
       }
-    }
+    },
+    setOnlineUsers(state, users) {
+      state.onlineUsers = users;
+    },
  },
   actions: {
-    // --- initializeWebSocketアクションを修正 ---
     initializeWebSocket({ commit, state }) {
-      // 接続済みの場合は何もしない
       if (state.ws && state.ws.readyState === WebSocket.OPEN) {
         return;
       }
-      
       const token = localStorage.getItem('token');
       if (!token) {
-        return; // トークンがなければ接続しない
+        return;
       }
-      
-      // サーバーにトークンを渡して接続
       const ws = new WebSocket(`ws://192.168.100.37:3000?token=${token}`);
 
       ws.onopen = () => console.log('Connected to WebSocket server');
       ws.onclose = () => {
         console.log('Disconnected from WebSocket server');
-        commit('setOnlineUsers', []); // 切断されたらリストを空にする
+        commit('setOnlineUsers', []);
       }
       ws.onerror = (err) => console.error('WebSocket Error:', err);
 
@@ -106,6 +94,13 @@ const store = createStore({
           
           if (payload.type === 'new_message') {
             commit('addMessage', payload);
+            const message = payload.data;
+            if (state.user && state.user.username !== message.user) {
+              window.electronAPI.notify({
+                title: `新しいメッセージ: ${message.user}`,
+                body: message.text
+              });
+            }
           } else if (payload.type === 'message_deleted') {
             Object.keys(state.messages).forEach(channelId => {
               commit('removeMessage', { 
@@ -113,7 +108,7 @@ const store = createStore({
                 messageId: payload.id 
               });
             });
-          } else if (payload.type === 'user_list_update') { // --- [4] user_list_updateを処理 ---
+          } else if (payload.type === 'user_list_update') {
             commit('setOnlineUsers', payload.data);
           }
         } catch (e) {
@@ -121,8 +116,6 @@ const store = createStore({
         }
       };
     },
-
-
     selectChannel({ commit, dispatch }, channelId) {
       commit('setSelectedChannel', channelId)
       dispatch('loadMessages', channelId)
@@ -135,7 +128,6 @@ const store = createStore({
         console.error('Failed to load messages:', error);
       }
     },
-
     async register(_context, { username, password }) {
       try {
         await apiClient.post('/register', { username, password });
@@ -145,25 +137,20 @@ const store = createStore({
         throw new Error(message);
       }
     },
-
-    // --- ログイン成功時にWebSocketを初期化 ---
-    async login({ commit, dispatch }, { username, password }) { // dispatchを追加
+    async login({ commit, dispatch }, { username, password }) {
       try {
         const { data } = await apiClient.post('/login', { username, password });
         commit('setUser', { user: data.user, token: data.token });
-        dispatch('initializeWebSocket'); // ログイン後に接続開始
+        dispatch('initializeWebSocket');
         return true;
       } catch (error) {
         const message = error.response?.data?.error || 'ログインに失敗しました。';
         throw new Error(message);
       }
     },
-
     logout({ commit }) {
-      // ユーザー情報とトークンをクリア
       commit('setUser', { user: null, token: null });
     },
-
     async sendMessage({ state }, text) {
       if (!state.user) {
         console.error('User not logged in.');
@@ -179,31 +166,24 @@ const store = createStore({
         console.error('Failed to send message:', error);
       }
     },
-    
-    // メッセージ削除アクション
     async deleteMessage(_, messageId) {
       try {
         await apiClient.delete(`/messages/${messageId}`);
-        // 成功した場合、ローカルのstateからの削除はWebSocket経由で行われる
       } catch (error) {
         console.error('Failed to delete message:', error);
-        // 必要であれば、ここでエラー通知を行う
-        // 例: toast.error('メッセージの削除に失敗しました。');
       }
     }
   },
   getters: {
-    onlineUsers: state => state.onlineUsers, // --- onlineUsersのゲッターを追加 ---
     channels: state => state.channels,
     selectedChannel: state => state.channels.find(c => c.id === state.selectedChannelId),
     messagesForSelectedChannel: state => state.messages[state.selectedChannelId] || [],
-    // トークンの有無で認証状態を判断
     isAuthenticated: state => !!state.token,
     currentUser: state => state.user,
+    onlineUsers: state => state.onlineUsers,
   }
 })
 
-// アプリケーション起動時に、ログイン済みであればWebSocketを初期化
 if (store.getters.isAuthenticated) {
   store.dispatch('initializeWebSocket');
 }
