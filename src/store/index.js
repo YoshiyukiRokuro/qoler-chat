@@ -30,10 +30,14 @@ const store = createStore({
     ],
     selectedChannelId: 1,
     messages: {},
-    unreadCounts: {}
+    unreadCounts: {},
+    lastReadMessageIds: {}, // ★ 追加: チャンネルごとの最後に読んだメッセージIDを保持
   },
   mutations: {
-
+    // ★ 追加: 最後に読んだメッセージIDをセットする
+    setLastReadMessageId(state, { channelId, messageId }) {
+      state.lastReadMessageIds[channelId] = messageId;
+    },
     setUnreadCount(state, { channelId, count }) {
         state.unreadCounts[channelId] = count;
     },
@@ -92,6 +96,17 @@ const store = createStore({
     },
  },
   actions: {
+
+    // ★ 追加: 最後に読んだメッセージIDを取得するアクション
+    async fetchLastReadMessageId({ commit }, channelId) {
+      try {
+        const { data } = await apiClient.get(`/channels/${channelId}/last-read`);
+        commit('setLastReadMessageId', { channelId, messageId: data.last_read_message_id });
+      } catch (error) {
+        console.error('Failed to fetch last read message id:', error);
+      }
+    },
+
     initializeWebSocket({ commit, state }) {
       if (state.ws && state.ws.readyState === WebSocket.OPEN) {
         return;
@@ -138,10 +153,15 @@ const store = createStore({
         }
       };
     },
-    selectChannel({ commit, dispatch }, channelId) {
-      commit('setSelectedChannel', channelId)
-      dispatch('loadMessages', channelId)
-      dispatch('markChannelAsRead', channelId); // チャンネルを既読にする
+
+    // selectChannelアクションを更新
+    async selectChannel({ commit, dispatch }, channelId) {
+      commit('setSelectedChannel', channelId);
+      await dispatch('loadMessages', channelId);
+      // ★ 追加: 最後に読んだメッセージIDを取得するアクションを呼ぶ
+      await dispatch('fetchLastReadMessageId', channelId);
+      // チャンネルを既読にする処理は変更なし
+      dispatch('markChannelAsRead', channelId);
     },
 
     // チャンネルのメッセージを既読にするアクション
@@ -229,6 +249,10 @@ const store = createStore({
     currentUser: state => state.user,
     onlineUsers: state => state.onlineUsers,
     unreadCounts: state => state.unreadCounts,
+    // ★ 追加: 選択中のチャンネルの最後に読んだメッセージIDを取得する
+    lastReadMessageIdForSelectedChannel: (state) => {
+      return state.lastReadMessageIds[state.selectedChannelId];
+    },
   }
 })
 

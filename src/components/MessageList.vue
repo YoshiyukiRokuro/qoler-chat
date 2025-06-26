@@ -5,27 +5,30 @@
         <h2># {{ selectedChannel ? selectedChannel.name : '' }}</h2>
       </div>
       <div class="messages" ref="messageContainer">
-        <div
-          v-for="message in messages"
-          :key="message.id"
-          class="message-wrapper"
-          :class="{ own: currentUser && message.user === currentUser.username }"
-        >
-          <div class="message">
-            <div class="user-info">
-              <strong>{{ message.user }}</strong>
-              <span class="timestamp">{{ formatTimestamp(message.timestamp) }}</span>
-              <button
-                v-if="currentUser && message.user === currentUser.username"
-                @click="requestDelete(message.id)"
-                class="delete-button"
-              >
-                ×
-              </button>
-            </div>
-            <p class="text">{{ message.text }}</p>
+        <template v-for="(message, index) in messages" :key="message.id">
+          <div v-if="index === firstUnreadIndex" class="unread-separator">
+            <span>ここから未読</span>
           </div>
-        </div>
+          <div
+            class="message-wrapper"
+            :class="{ own: currentUser && message.user === currentUser.username }"
+          >
+            <div class="message">
+              <div class="user-info">
+                <strong>{{ message.user }}</strong>
+                <span class="timestamp">{{ formatTimestamp(message.timestamp) }}</span>
+                <button
+                  v-if="currentUser && message.user === currentUser.username"
+                  @click="requestDelete(message.id)"
+                  class="delete-button"
+                >
+                  ×
+                </button>
+              </div>
+              <p class="text">{{ message.text }}</p>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -40,9 +43,9 @@
 </template>
 
 <script>
-import { computed, ref, watch, nextTick } from 'vue'
-import { useStore } from 'vuex'
-import ConfirmModal from './ConfirmModal.vue'; // モーダルコンポーネントをインポート
+import { computed, ref, watch, nextTick } from 'vue';
+import { useStore } from 'vuex';
+import ConfirmModal from './ConfirmModal.vue';
 
 export default {
   name: 'MessageList',
@@ -50,49 +53,58 @@ export default {
     ConfirmModal
   },
   setup() {
-    const store = useStore()
-    const messageContainer = ref(null)
+    const store = useStore();
+    const messageContainer = ref(null);
     const showConfirmModal = ref(false);
     const messageIdToDelete = ref(null);
 
-    const selectedChannel = computed(() => store.getters.selectedChannel)
-    const messages = computed(() => store.getters.messagesForSelectedChannel)
-    const currentUser = computed(() => store.getters.currentUser)
+    const selectedChannel = computed(() => store.getters.selectedChannel);
+    const messages = computed(() => store.getters.messagesForSelectedChannel);
+    const currentUser = computed(() => store.getters.currentUser);
+    const lastReadMessageId = computed(() => store.getters.lastReadMessageIdForSelectedChannel);
+
+    // 最初の未読メッセージのインデックスを計算
+    const firstUnreadIndex = computed(() => {
+      if (!lastReadMessageId.value || messages.value.length === 0) {
+        return -1; // 未読がない、またはメッセージがない場合は -1
+      }
+      const lastReadIndex = messages.value.findIndex(m => m.id === lastReadMessageId.value);
+      if (lastReadIndex === -1 || lastReadIndex === messages.value.length - 1) {
+        return -1; // 既読の最後のメッセージが見つからない、またはそれが最新のメッセージの場合
+      }
+      return lastReadIndex + 1;
+    });
 
     const formatTimestamp = (timestamp) => {
-      if (!timestamp) return ''
-      const date = new Date(timestamp)
-      return date.toLocaleTimeString('ja-JP', { year: "numeric", month: "numeric", day: "numeric", hour: '2-digit', minute: '2-digit' })
-    }
+      if (!timestamp) return '';
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
 
-    // confirmの代わりにモーダルを開くメソッド
     const requestDelete = (messageId) => {
       messageIdToDelete.value = messageId;
       showConfirmModal.value = true;
     };
 
-    // モーダルで「削除」が押されたときの処理
     const handleConfirmDelete = () => {
       if (messageIdToDelete.value) {
         store.dispatch('deleteMessage', messageIdToDelete.value);
       }
-      handleCancelDelete(); // モーダルを閉じる
+      handleCancelDelete();
     };
 
-    // モーダルで「キャンセル」が押された、または背景がクリックされたときの処理
     const handleCancelDelete = () => {
       showConfirmModal.value = false;
       messageIdToDelete.value = null;
     };
 
     watch(messages, async () => {
-      await nextTick()
-      const container = messageContainer.value
+      await nextTick();
+      const container = messageContainer.value;
       if (container) {
-        container.scrollTop = container.scrollHeight
+        container.scrollTop = container.scrollHeight;
       }
-    }, { deep: true })
-
+    }, { deep: true });
 
     return {
       selectedChannel,
@@ -104,12 +116,28 @@ export default {
       showConfirmModal,
       handleConfirmDelete,
       handleCancelDelete,
-    }
+      firstUnreadIndex,
+    };
   }
-}
+};
 </script>
 
 <style scoped>
+.unread-separator {
+  text-align: center;
+  margin: 10px 0;
+  border-top: 1px solid #e04040;
+  position: relative;
+}
+.unread-separator span {
+  background-color: #f0f2f5;
+  color: #e04040;
+  padding: 0 10px;
+  position: relative;
+  top: -11px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
 .message-list-wrapper {
   flex: 1;
   display: flex;
