@@ -38,7 +38,7 @@ export default {
     const formatTimestamp = (timestamp) => {
       if (!timestamp) return ''
       const date = new Date(timestamp)
-      return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+      return date.toLocaleTimeString('ja-JP', { year: "numeric", month: "numeric", day: "numeric", hour: '2-digit', minute: '2-digit' })
     }
 
     watch(messages, async () => {
