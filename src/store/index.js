@@ -4,7 +4,7 @@ import axios from 'axios' // axiosをインポート
 
 // axiosのベースURLを設定
 const apiClient = axios.create({
-  baseURL: 'http://192.168.100.37:3000', // サーバーのアドレス
+  baseURL: 'http://localhost:3000', // サーバーのアドレス
   headers: {
     'Content-Type': 'application/json',
   },
@@ -39,7 +39,7 @@ const store = createStore({
   },
   actions: {
     initializeWebSocket({ commit }) {
-      const ws = new WebSocket('ws://192.168.100.37:3000'); // サーバーのアドレス:ポート
+      const ws = new WebSocket('ws://localhost:3000'); // サーバーのアドレス:ポート
 
       ws.onopen = () => console.log('Connected to WebSocket server');
       ws.onclose = () => console.log('Disconnected from WebSocket server');
