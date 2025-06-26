@@ -95,7 +95,6 @@ const store = createStore({
     async register(_context, { username, password }) {
       try {
         await apiClient.post('/register', { username, password });
-        alert('登録が完了しました。ログインしてください。');
         return true;
       } catch (error) {
         const message = error.response?.data?.error || '登録に失敗しました。';
