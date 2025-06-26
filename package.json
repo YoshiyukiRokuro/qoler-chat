@@ -13,11 +13,13 @@
   },
   "main": "background.js",
   "dependencies": {
+    "axios": "^1.10.0",
     "core-js": "^3.8.3",
     "sqlite3": "^5.1.7",
     "vue": "^3.2.13",
     "vue-loader": "^17.4.2",
-    "vuex": "^4.1.0"
+    "vuex": "^4.1.0",
+    "ws": "^8.18.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",
