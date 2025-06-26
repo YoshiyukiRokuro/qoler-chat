@@ -13,6 +13,16 @@
         </li>
       </ul>
     </div>
+
+    <div class="online-users-section">
+      <h2>Online - {{ onlineUsers.length }}</h2>
+      <ul>
+        <li v-for="user in onlineUsers" :key="user" class="online-user">
+          <span class="online-indicator">●</span> {{ user }}
+        </li>
+      </ul>
+    </div>
+
     <div class="user-section">
       <div v-if="currentUser" class="current-user">
         <span class="username">{{ currentUser.username }}</span>
@@ -25,32 +35,33 @@
 <script>
 import { computed } from 'vue'
 import { useStore } from 'vuex'
-import { useRouter } from 'vue-router' // useRouterをインポート
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'ChannelList',
   setup() {
     const store = useStore()
-    const router = useRouter() // routerインスタンスを取得
+    const router = useRouter()
 
     const channels = computed(() => store.getters.channels)
     const selectedChannelId = computed(() => store.state.selectedChannelId)
-    const currentUser = computed(() => store.getters.currentUser) // ログイン中のユーザー情報を取得
+    const currentUser = computed(() => store.getters.currentUser)
+    const onlineUsers = computed(() => store.getters.onlineUsers)
 
     const selectChannel = (id) => {
       store.dispatch('selectChannel', id)
     }
 
-    // ログアウト処理
     const handleLogout = () => {
-      store.dispatch('logout') // logoutアクションを呼び出す
-      router.push('/login') // ログイン画面にリダイレクト
+      store.dispatch('logout')
+      router.push('/login')
     }
 
     return {
       channels,
       selectedChannelId,
       currentUser,
+      onlineUsers,
       selectChannel,
       handleLogout
     }
@@ -93,6 +104,28 @@ li.active {
   background-color: #42b983;
   color: white;
 }
+
+/* オンラインユーザーセクションのスタイル */
+.online-users-section {
+  padding: 10px;
+  flex-grow: 1; /* 空いたスペースを埋める */
+  overflow-y: auto;
+}
+.online-user {
+  padding: 5px 20px;
+  color: #333;
+  font-weight: normal;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+}
+.online-indicator {
+  color: #42b983; /* オンラインを示す緑色 */
+  margin-right: 8px;
+  font-size: 0.8em;
+}
+
+
 .user-section {
   padding: 15px;
   border-top: 1px solid #ddd;

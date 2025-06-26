@@ -26,6 +26,7 @@ const store = createStore({
     // localStorageからユーザー情報とトークンを復元
     user: JSON.parse(localStorage.getItem('user')) || null,
     token: localStorage.getItem('token') || null,
+    onlineUsers: [], // onlineUsersを追加
     channels: [
       { id: 1, name: 'general' },
       { id: 2, name: 'random' },
@@ -35,6 +36,11 @@ const store = createStore({
     messages: {}
   },
   mutations: {
+    // setOnlineUsersミューテーションを追加
+    setOnlineUsers(state, users) {
+      state.onlineUsers = users;
+    },
+
     setSelectedChannel(state, channelId) {
       state.selectedChannelId = channelId
     },
@@ -72,34 +78,51 @@ const store = createStore({
     }
  },
   actions: {
+    // --- initializeWebSocketアクションを修正 ---
     initializeWebSocket({ commit, state }) {
-      const ws = new WebSocket('ws://192.168.100.37:3000');
+      // 接続済みの場合は何もしない
+      if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+        return;
+      }
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return; // トークンがなければ接続しない
+      }
+      
+      // サーバーにトークンを渡して接続
+      const ws = new WebSocket(`ws://192.168.100.37:3000?token=${token}`);
 
       ws.onopen = () => console.log('Connected to WebSocket server');
-      ws.onclose = () => console.log('Disconnected from WebSocket server');
+      ws.onclose = () => {
+        console.log('Disconnected from WebSocket server');
+        commit('setOnlineUsers', []); // 切断されたらリストを空にする
+      }
       ws.onerror = (err) => console.error('WebSocket Error:', err);
 
       ws.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
           
-          // WebSocketで受信したメッセージのタイプに応じて処理を分岐
           if (payload.type === 'new_message') {
             commit('addMessage', payload);
           } else if (payload.type === 'message_deleted') {
-            // 現在開いている全てのチャンネルのメッセージをチェックして削除する
             Object.keys(state.messages).forEach(channelId => {
               commit('removeMessage', { 
                 channelId: Number(channelId), 
                 messageId: payload.id 
               });
             });
+          } else if (payload.type === 'user_list_update') { // --- [4] user_list_updateを処理 ---
+            commit('setOnlineUsers', payload.data);
           }
         } catch (e) {
           console.error('Failed to parse message:', event.data, e);
         }
       };
     },
+
+
     selectChannel({ commit, dispatch }, channelId) {
       commit('setSelectedChannel', channelId)
       dispatch('loadMessages', channelId)
@@ -123,11 +146,12 @@ const store = createStore({
       }
     },
 
-    async login({ commit }, { username, password }) {
+    // --- ログイン成功時にWebSocketを初期化 ---
+    async login({ commit, dispatch }, { username, password }) { // dispatchを追加
       try {
         const { data } = await apiClient.post('/login', { username, password });
-        // ユーザー情報とトークンを一緒に保存
         commit('setUser', { user: data.user, token: data.token });
+        dispatch('initializeWebSocket'); // ログイン後に接続開始
         return true;
       } catch (error) {
         const message = error.response?.data?.error || 'ログインに失敗しました。';
@@ -169,6 +193,7 @@ const store = createStore({
     }
   },
   getters: {
+    onlineUsers: state => state.onlineUsers, // --- onlineUsersのゲッターを追加 ---
     channels: state => state.channels,
     selectedChannel: state => state.channels.find(c => c.id === state.selectedChannelId),
     messagesForSelectedChannel: state => state.messages[state.selectedChannelId] || [],
@@ -178,7 +203,9 @@ const store = createStore({
   }
 })
 
-// ストア作成時にWebSocketの初期化アクションをディスパッチ
-store.dispatch('initializeWebSocket');
+// アプリケーション起動時に、ログイン済みであればWebSocketを初期化
+if (store.getters.isAuthenticated) {
+  store.dispatch('initializeWebSocket');
+}
 
 export default store;
