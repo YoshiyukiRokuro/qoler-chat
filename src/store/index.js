@@ -27,9 +27,8 @@ const store = createStore({
     user: JSON.parse(localStorage.getItem('user')) || null,
     token: localStorage.getItem('token') || null,
     channels: [
-      { id: 1, name: 'general' },
-      { id: 2, name: 'random' },
-      { id: 3, name: 'vue' }
+      { id: 1, name: '連絡' },
+      { id: 2, name: '雑談' }
     ],
     selectedChannelId: 1,
     messages: {}
