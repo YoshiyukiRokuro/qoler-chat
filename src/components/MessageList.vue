@@ -166,7 +166,9 @@ strong {
 .text {
   margin: 0;
   word-wrap: break-word;
+  white-space: pre-wrap; /* この行を追加 */
 }
+
 
 /* 自分のメッセージを右側に表示するためのスタイル */
 .message-wrapper.own {
