@@ -41,7 +41,7 @@
       <h2>接続：{{ onlineUsers.length }}人</h2>
       <ul>
         <li v-for="user in onlineUsers" :key="user" class="online-user">
-          <span class="online-indicator" style="flex-wrap: wrap;">● <span style="color:dimgray">{{ user }}</span></span>
+          <span class="online-indicator">●<span style="color:dimgray">{{ user }}</span></span>
         </li>
       </ul>
     </div>
@@ -255,7 +255,8 @@ li:hover .delete-channel-button {
 .online-indicator {
   color: #42b983;
   margin-right: 8px;
-  font-size: 0.8em;
+  font-size: 1.2em;
+  flex-wrap: wrap;
 }
 /* ★★★ ここのスタイルを修正 ★★★ */
 .user-section {
