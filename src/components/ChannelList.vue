@@ -41,7 +41,7 @@
       <h2>接続：{{ onlineUsers.length }}人</h2>
       <ul>
         <li v-for="user in onlineUsers" :key="user" class="online-user">
-          <span class="online-indicator">● <span style="color:dimgray">{{ user }}</span></span>
+          <span class="online-indicator" style="flex-wrap: wrap;">● <span style="color:dimgray">{{ user }}</span></span>
         </li>
       </ul>
     </div>
