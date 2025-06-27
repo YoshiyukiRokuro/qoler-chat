@@ -1,9 +1,14 @@
+// src/preload.js
+
 const { contextBridge, ipcRenderer } = require('electron');
 
-// レンダラープロセス（Vueアプリ）の 'window' オブジェクトに
-// 安全に 'electronAPI' というグローバル変数を公開します。
 contextBridge.exposeInMainWorld('electronAPI', {
-  // 'notify'という名前で、メインプロセスに 'notify-message' という
-  // メッセージを送信する関数を公開します。
-  notify: (options) => ipcRenderer.send('notify-message', options)
+  notify: (options) => ipcRenderer.send('notify-message', options),
+
+  //【ここから追加】
+  // メインプロセスからの自動ログイン要求を受け取るリスナーを登録する関数
+  onAutoLoginRequest: (callback) => {
+    ipcRenderer.on('auto-login-request', (_event, empId) => callback(empId));
+  }
+  //【ここまで追加】
 });

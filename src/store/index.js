@@ -114,6 +114,23 @@ const store = createStore({
     },
   },
   actions: {
+
+  // 自動ログインアクション
+  async autoLogin({ commit, dispatch }, { id }) {
+    try {
+      // 自動ログイン用のAPIを呼び出す
+      const { data } = await apiClient.post("/login/auto", { id });
+      commit("setUser", data.user);
+      commit("setToken", data.token);
+      await dispatch("initializeApp");
+      return true;
+    } catch (error) {
+      console.error("Auto login failed:", error.response?.data?.error || error.message);
+      // 自動ログイン失敗はユーザーに通知せず、通常のログイン画面を表示させる
+      return false;
+    }
+  },
+    
     updateApiBaseUrl({ commit }, { ip, port }) {
       const baseUrl = `http://${ip}:${port}`;
       commit("setApiBaseUrl", baseUrl);

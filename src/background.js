@@ -13,7 +13,6 @@ let win // win変数をグローバルスコープで宣言
 
 // レンダラープロセスから通知の要求を受け取る
 ipcMain.on('notify-message', (event, options) => {
-
   const notification = new Notification({
     title: options.title,
     body: options.body,
@@ -36,11 +35,10 @@ async function createWindow() {
   win = new BrowserWindow({
     width: 800,
     height: 800,
-    title: 'クオラチャット', // ウィンドウタイトルを変更
+    title: 'クオラチャット',
     maximizable: true,
     autoHideMenuBar: true,
     webPreferences: {
-      // preloadスクリプトを有効にし、プロセス間通信を安全に行います
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
@@ -54,6 +52,27 @@ async function createWindow() {
     createProtocol('app')
     win.loadURL('app://./index.html')
   }
+
+  // ウィンドウのコンテンツが完全にロードされた後に自動ログイン処理を実行
+  win.webContents.on('did-finish-load', () => {
+    //【ここから修正】
+    // コマンドライン引数をチェックして、1～5桁の数字の引数を探す
+    let empId = null;
+    // process.argv[0]は実行ファイルパスなので、それ以降の引数を調べる
+    for (const arg of process.argv.slice(1)) {
+      // 正規表現で、引数が1～5桁の数字のみで構成されているかチェック
+      if (/^\d{1,5}$/.test(arg)) {
+        empId = arg;
+        break; // 最初に見つかったものを採用
+      }
+    }
+
+    if (empId) {
+      // EmpCdが見つかったら、レンダラープロセスに通知
+      win.webContents.send('auto-login-request', empId);
+    }
+    //【ここまで修正】
+  });
 }
 
 // アプリケーションのイベントリスナーを設定
@@ -70,7 +89,6 @@ app.on('activate', () => {
 
 
 // アプリケーションが準備完了時にウィンドウを作成
-// isDevelopmentフラグがtrueの場合、Vue Devtoolsをインストールします
 app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
     try {
