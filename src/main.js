@@ -5,13 +5,13 @@ import App from './App.vue'
 import store from './store'
 import router from './router'
 import axios from 'axios'
-import Toast from "vue-toastification"; // --- [1] Toastをインポート
-import "vue-toastification/dist/index.css"; // --- [2] CSSをインポート
+import Toast from "vue-toastification"; // Toastをインポート
+import "vue-toastification/dist/index.css"; // CSSをインポート
 
 const app = createApp(App)
 app.config.globalProperties.$axios = axios
 
-// --- [3] Toastプラグインをオプション付きで登録 ---
+// Toastプラグインをオプション付きで登録 ---
 const options = {
   position: "top-right",
   timeout: 5000,

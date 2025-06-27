@@ -23,7 +23,8 @@ ipcMain.on('notify-message', (event, options) => {
 async function createWindow() {
   const win = new BrowserWindow({
     width: 800,
-    height: 600,
+    height: 800,
+    maximizable: true,
     webPreferences: {
       // preloadスクリプトを有効にし、プロセス間通信を安全に行います
       nodeIntegration: false,

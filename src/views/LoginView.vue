@@ -16,14 +16,14 @@
 import { ref } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { useToast } from "vue-toastification"; // --- [1] useToastをインポート
+import { useToast } from "vue-toastification"; // useToastをインポート
 
 export default {
   name: 'LoginView',
   setup() {
     const store = useStore();
     const router = useRouter();
-    const toast = useToast(); // --- [2] toastインスタンスを取得
+    const toast = useToast(); // toastインスタンスを取得
     const username = ref('');
     const password = ref('');
     const isRegistering = ref(false);
@@ -43,7 +43,7 @@ export default {
         if (isRegistering.value) {
           success = await store.dispatch('register', { username: username.value, password: password.value });
           if (success) {
-            // --- [3] 成功時のトースト表示 ---
+            // 成功時のトースト表示 ---
             toast.success("登録が完了しました。ログインしてください。");
             isRegistering.value = false; // ログインモードに切り替え
           }
@@ -55,7 +55,7 @@ export default {
           router.push('/');
         }
       } catch (err) {
-        // --- [4] エラー時のトースト表示 ---
+        // エラー時のトースト表示 ---
         // error.value = err.message || 'エラーが発生しました。';
         toast.error(err.message || 'エラーが発生しました。');
       }
@@ -78,7 +78,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 96vh;
   background-color: #f0f2f5;
 }
 .login-form {
