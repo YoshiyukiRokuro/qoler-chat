@@ -25,6 +25,7 @@ async function createWindow() {
     width: 800,
     height: 800,
     maximizable: true,
+    autoHideMenuBar: true,
     webPreferences: {
       // preloadスクリプトを有効にし、プロセス間通信を安全に行います
       nodeIntegration: false,

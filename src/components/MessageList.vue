@@ -1,44 +1,38 @@
 <template>
   <div class="message-list-wrapper">
     <div class="message-list">
-      <div class="header">
-        <h2># {{ selectedChannel ? selectedChannel.name : '' }}</h2>
-      </div>
-      <div class="messages" ref="messageContainer">
-        <template v-for="(message, index) in messages" :key="message.id">
-          <div v-if="index === firstUnreadIndex" class="unread-separator">
-            <span>ここから未読</span>
-          </div>
-          <div
-            class="message-wrapper"
-            :class="{ own: currentUser && message.user === currentUser.username }"
-          >
-            <div class="message">
-              <div class="user-info">
-                <strong>{{ message.user }}</strong>
-                <span class="timestamp">{{ formatTimestamp(message.timestamp) }}</span>
-                <button
-                  v-if="currentUser && message.user === currentUser.username"
-                  @click="requestDelete(message.id)"
-                  class="delete-button"
-                >
-                  ×
-                </button>
-              </div>
-              <p class="text">{{ message.text }}</p>
+      <div v-if="messages.length" class="messages-inner">
+        <div class="header">
+          <h2># {{ selectedChannel ? selectedChannel.name : '' }}</h2>
+        </div>
+        <div class="messages" ref="messageContainer">
+          <template v-for="(message, index) in messages" :key="message.id">
+            <div v-if="index === firstUnreadIndex" class="unread-separator">
+              <span>ここから未読</span>
             </div>
-          </div>
-        </template>
+            <div class="message-wrapper" :class="{ own: currentUser && message.user === currentUser.username }">
+              <div class="message">
+                <div class="user-info">
+                  <strong>{{ message.user }}</strong>
+                  <span class="timestamp">{{ formatTimestamp(message.timestamp) }}</span>
+                  <button v-if="currentUser && message.user === currentUser.username" @click="requestDelete(message.id)" class="delete-button">
+                    ×
+                  </button>
+                </div>
+                <p class="text">{{ message.text }}</p>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
+      <div v-else class="no-messages">
+        <p>メッセージはまだありません。</p>
+        <p>最初のメッセージを送信しましょう！</p>
+      </div>
+
     </div>
 
-    <ConfirmModal
-      :show="showConfirmModal"
-      title="メッセージの削除"
-      message="本当にこのメッセージを削除しますか？"
-      @confirm="handleConfirmDelete"
-      @cancel="handleCancelDelete"
-    />
+    <ConfirmModal :show="showConfirmModal" title="メッセージの削除" message="本当にこのメッセージを削除しますか？" @confirm="handleConfirmDelete" @cancel="handleCancelDelete" />
   </div>
 </template>
 
@@ -129,6 +123,7 @@ export default {
   border-top: 1px solid #e04040;
   position: relative;
 }
+
 .unread-separator span {
   background-color: #f0f2f5;
   color: #e04040;
@@ -138,12 +133,15 @@ export default {
   font-size: 0.8em;
   font-weight: bold;
 }
+
 .message-list-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
-  position: relative; /* モーダルの位置の基準にする */
-  overflow: hidden; /* 追加 */
+  position: relative;
+  /* モーダルの位置の基準にする */
+  overflow: hidden;
+  /* 追加 */
 }
 
 .message-list {
@@ -153,12 +151,14 @@ export default {
   overflow-y: hidden;
   background-color: #f0f2f5;
 }
+
 .header {
   padding: 15px;
   border-bottom: 1px solid #ddd;
   background-color: #fff;
   text-align: center;
 }
+
 .messages {
   flex: 1;
   padding: 15px;
@@ -166,10 +166,12 @@ export default {
   display: flex;
   flex-direction: column;
 }
+
 .message-wrapper {
   display: flex;
   margin-bottom: 15px;
 }
+
 .message {
   max-width: 70%;
   padding: 10px 15px;
@@ -177,24 +179,29 @@ export default {
   background-color: #ffffff;
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 }
+
 .user-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 5px;
 }
+
 strong {
   font-weight: bold;
 }
+
 .timestamp {
   font-size: 0.75em;
   color: #999;
   margin-left: 10px;
 }
+
 .text {
   margin: 0;
   word-wrap: break-word;
-  white-space: pre-wrap; /* この行を追加 */
+  white-space: pre-wrap;
+  /* この行を追加 */
 }
 
 
@@ -202,6 +209,7 @@ strong {
 .message-wrapper.own {
   justify-content: flex-end;
 }
+
 .message-wrapper.own .message {
   background-color: #dcf8c6;
 }
@@ -216,7 +224,14 @@ strong {
   line-height: 1;
   padding: 0 5px;
 }
+
 .delete-button:hover {
   color: #f00;
+}
+
+.no-messages {
+  text-align: center;
+  margin: auto;
+  color: #888;
 }
 </style>

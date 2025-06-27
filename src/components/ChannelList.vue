@@ -1,5 +1,12 @@
 <template>
   <div class="channel-list">
+    <div class="user-section">
+      <div v-if="currentUser" class="current-user">
+        <span class="username">{{ currentUser.username }}</span>
+        <button @click="handleLogout" class="logout-button">ログアウト</button>
+      </div>
+    </div>
+
     <div class="channels-section">
       <div class="channels-header">
         <h2>チャンネル</h2>
@@ -31,19 +38,12 @@
     </div>
 
     <div class="online-users-section">
-      <h2>Online - {{ onlineUsers.length }}</h2>
+      <h2>接続：{{ onlineUsers.length }}人</h2>
       <ul>
         <li v-for="user in onlineUsers" :key="user" class="online-user">
-          <span class="online-indicator">●</span> {{ user }}
+          <span class="online-indicator">● <span style="color:dimgray">{{ user }}</span></span>
         </li>
       </ul>
-    </div>
-
-    <div class="user-section">
-      <div v-if="currentUser" class="current-user">
-        <span class="username">{{ currentUser.username }}</span>
-        <button @click="handleLogout" class="logout-button">ログアウト</button>
-      </div>
     </div>
     
     <CreateChannelModal
@@ -67,13 +67,13 @@ import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { useToast } from "vue-toastification";
 import DeleteChannelModal from './DeleteChannelModal.vue';
-import CreateChannelModal from './CreateChannelModal.vue'; // インポート
+import CreateChannelModal from './CreateChannelModal.vue';
 
 export default {
   name: 'ChannelList',
   components: {
     DeleteChannelModal,
-    CreateChannelModal, // 登録
+    CreateChannelModal,
   },
   setup() {
     const store = useStore();
@@ -257,9 +257,10 @@ li:hover .delete-channel-button {
   margin-right: 8px;
   font-size: 0.8em;
 }
+/* ★★★ ここのスタイルを修正 ★★★ */
 .user-section {
   padding: 15px;
-  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd; /* border-topから変更 */
   background-color: #e8e9eb;
 }
 .current-user {
