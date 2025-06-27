@@ -12,9 +12,14 @@
             </div>
             <div class="message-wrapper" :class="{ own: currentUser && message.user === currentUser.username }">
               <div class="message">
+                <div v-if="message.replyToId" class="reply-context">
+                  <small>↪ <strong>{{ message.repliedToUser }}</strong> への返信</small>
+                  <p class="reply-text">{{ message.repliedToText }}</p>
+                </div>
                 <div class="user-info">
                   <strong>{{ message.user }}</strong>
                   <span class="timestamp">{{ formatTimestamp(message.timestamp) }}</span>
+                  <button @click="startReply(message)" class="reply-button" title="リプライ">↪</button>
                   <button v-if="currentUser && message.user === currentUser.username" @click="requestDelete(message.id)" class="delete-button">
                     ×
                   </button>
@@ -29,9 +34,7 @@
         <p>メッセージはまだありません。</p>
         <p>最初のメッセージを送信しましょう！</p>
       </div>
-
     </div>
-
     <ConfirmModal :show="showConfirmModal" title="メッセージの削除" message="本当にこのメッセージを削除しますか？" @confirm="handleConfirmDelete" @cancel="handleCancelDelete" />
   </div>
 </template>
@@ -57,14 +60,13 @@ export default {
     const currentUser = computed(() => store.getters.currentUser);
     const lastReadMessageId = computed(() => store.getters.lastReadMessageIdForSelectedChannel);
 
-    // 最初の未読メッセージのインデックスを計算
     const firstUnreadIndex = computed(() => {
       if (!lastReadMessageId.value || messages.value.length === 0) {
-        return -1; // 未読がない、またはメッセージがない場合は -1
+        return -1;
       }
       const lastReadIndex = messages.value.findIndex(m => m.id === lastReadMessageId.value);
       if (lastReadIndex === -1 || lastReadIndex === messages.value.length - 1) {
-        return -1; // 既読の最後のメッセージが見つからない、またはそれが最新のメッセージの場合
+        return -1;
       }
       return lastReadIndex + 1;
     });
@@ -73,6 +75,10 @@ export default {
       if (!timestamp) return '';
       const date = new Date(timestamp);
       return date.toLocaleTimeString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+    
+    const startReply = (message) => {
+      store.dispatch('startReply', message);
     };
 
     const requestDelete = (messageId) => {
@@ -111,6 +117,7 @@ export default {
       handleConfirmDelete,
       handleCancelDelete,
       firstUnreadIndex,
+      startReply,
     };
   }
 };
@@ -139,22 +146,21 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden; /* この行は変更なし */
+  overflow: hidden;
 }
 
 .message-list {
   flex: 1;
   display: flex;
   flex-direction: column;
-  /* overflow-y: hidden; を削除 */
-  overflow-y: auto; /* この行に変更 */
+  overflow-y: auto;
   background-color: #f0f2f5;
 }
 
 .messages {
   flex: 1;
   padding: 15px;
-  overflow-y: auto; /* この行は変更なし */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -203,8 +209,6 @@ strong {
   font-size:1.2em;
 }
 
-
-/* 自分のメッセージを右側に表示するためのスタイル */
 .message-wrapper.own {
   justify-content: flex-end;
 }
@@ -213,7 +217,6 @@ strong {
   background-color: #dcf8c6;
 }
 
-/* 削除ボタンのスタイル */
 .delete-button {
   background: none;
   border: none;
@@ -232,5 +235,39 @@ strong {
   text-align: center;
   margin: auto;
   color: #888;
+}
+
+.reply-button {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 0 5px;
+  margin-left: 5px;
+}
+.reply-button:hover {
+  color: #42b983;
+}
+
+.reply-context {
+  background-color: #e8e8e8;
+  border-left: 3px solid #42b983;
+  padding: 5px 8px;
+  margin: -5px -10px 8px -10px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.message-wrapper.own .reply-context {
+  background-color: #d0efc1;
+}
+
+.reply-text {
+  margin: 2px 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #555;
 }
 </style>

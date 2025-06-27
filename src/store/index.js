@@ -19,6 +19,7 @@ const getInitialState = () => ({
   messages: {},
   unreadCounts: {},
   lastReadMessageIds: {},
+  replyingToMessage: null, // 返信中のメッセージを保持する
   ws: null,
   apiBaseUrl: "",
 });
@@ -31,6 +32,15 @@ const store = createStore({
     setApiBaseUrl(state, baseUrl) {
       state.apiBaseUrl = baseUrl;
       apiClient.defaults.baseURL = baseUrl;
+    },
+    // 返信中のメッセージを設定する
+    setReplyingTo(state, message) {
+      state.replyingToMessage = message;
+    },
+
+    // 返信中のメッセージをクリアする
+    clearReplyingTo(state) {
+      state.replyingToMessage = null;
     },
 
     // ストアの状態をリセットする
@@ -145,6 +155,15 @@ const store = createStore({
     },
   },
   actions: {
+    // 返信中のメッセージを設定する
+    startReply({ commit }, message) {
+      commit('setReplyingTo', message);
+    },
+    // 返信中のメッセージをクリアする
+    cancelReply({ commit }) {
+      commit('clearReplyingTo');
+    },
+
     // APIのベースURLを更新する
     updateApiBaseUrl({ commit }, { ip, port }) {
       const baseUrl = `http://${ip}:${port}`;
@@ -327,26 +346,32 @@ const store = createStore({
       }
       commit("resetState");
     },
-    async sendMessage({ state }, text) {
-      if (!state.user) {
-        console.error("User not logged in.");
-        return;
+    async sendMessage({ state, commit }, text) {
+        if (!state.user) {
+          console.error("User not logged in.");
+          return;
       }
       try {
+        // 【修正】送信時に返信先のIDをstateから取得して含める
+        const replyToId = state.replyingToMessage ? state.replyingToMessage.id : null;
+        
         await apiClient.post(
           "/messages",
           {
             channelId: state.selectedChannelId,
-            user: state.user.username,
-            text: text,
+            text: text, // userはバックエンドでトークンから取得するので不要
+            replyToId: replyToId
           },
           {
             headers: { Authorization: `Bearer ${state.token}` },
           }
         );
+        // 送信後に返信モードを解除
+        commit('clearReplyingTo');
       } catch (error) {
         console.error("Failed to send message:", error);
       }
+
     },
 
     // メッセージを削除する
@@ -442,6 +467,7 @@ const store = createStore({
   // onlineUsers: オンラインユーザーの一覧
   // unreadCounts: 各チャンネルの未読メッセージ数
   // lastReadMessageIdForSelectedChannel: 現在選択されているチャンネルの最後に読んだメッセージID
+  // replyingToMessage: 返信中のメッセージ
   getters: {
     channels: (state) => state.channels,
     selectedChannel: (state) =>
@@ -455,6 +481,7 @@ const store = createStore({
     lastReadMessageIdForSelectedChannel: (state) => {
       return state.lastReadMessageIds[state.selectedChannelId];
     },
+    replyingToMessage: (state) => state.replyingToMessage
   },
 });
 

@@ -1,5 +1,10 @@
 <template>
   <div class="message-form-container">
+    <div v-if="replyingToMessage" class="replying-to-banner">
+      <span><strong>{{ replyingToMessage.user }}</strong> へ返信中...</span>
+      <button @click="cancelReply" class="cancel-reply-button">×</button>
+    </div>
+
     <div v-if="showEmojiPicker" class="emoji-picker-wrapper">
       <EmojiPicker :native="true" @select="onSelectEmoji" />
     </div>
@@ -20,32 +25,37 @@
 </template>
 
 <script>
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, computed } from 'vue';
 import { useStore } from 'vuex';
-//【追加】絵文字ピッカーをインポート
 import EmojiPicker from 'vue3-emoji-picker';
-//【追加】絵文字ピッカーのスタイルシートをインポート
 import 'vue3-emoji-picker/css';
 
 export default {
   name: 'MessageForm',
   components: {
-    EmojiPicker //【追加】
+    EmojiPicker
   },
   setup() {
     const store = useStore();
     const newMessage = ref('');
     const textarea = ref(null);
-    const showEmojiPicker = ref(false); //【追加】
+    const showEmojiPicker = ref(false);
 
+    const replyingToMessage = computed(() => store.getters.replyingToMessage);
+
+    const cancelReply = () => {
+      store.dispatch('cancelReply');
+    };
+    
     const sendMessage = () => {
       if (newMessage.value.trim()) {
         store.dispatch('sendMessage', newMessage.value);
         newMessage.value = '';
-        showEmojiPicker.value = false; // 送信後にピッカーを閉じる
+        showEmojiPicker.value = false;
         nextTick(() => {
           if(textarea.value) {
             textarea.value.style.height = 'auto';
+            textarea.value.focus();
           }
         });
       }
@@ -58,7 +68,6 @@ export default {
       }
     };
 
-    //【ここから追加】
     const toggleEmojiPicker = () => {
       showEmojiPicker.value = !showEmojiPicker.value;
     };
@@ -71,26 +80,25 @@ export default {
       const end = textareaEl.selectionEnd;
       const text = newMessage.value;
 
-      // カーソル位置に絵文字を挿入
       newMessage.value = text.substring(0, start) + emoji.i + text.substring(end);
 
-      // 絵文字挿入後にカーソル位置を更新
       nextTick(() => {
         textareaEl.selectionStart = textareaEl.selectionEnd = start + emoji.i.length;
         textareaEl.focus();
-        autoResize(); // 高さを再計算
+        autoResize();
       });
     };
-    //【ここまで追加】
 
     return {
       newMessage,
       sendMessage,
       textarea,
       autoResize,
-      showEmojiPicker,    //【追加】
-      toggleEmojiPicker,  //【追加】
-      onSelectEmoji,      //【追加】
+      showEmojiPicker,
+      toggleEmojiPicker,
+      onSelectEmoji,
+      replyingToMessage,
+      cancelReply,
     };
   }
 }
@@ -98,12 +106,12 @@ export default {
 
 <style scoped>
 .message-form-container {
-  position: relative; /* 絵文字ピッカーの位置の基準点 */
+  position: relative;
 }
 
 .emoji-picker-wrapper {
   position: absolute;
-  bottom: 60px; /* message-formの高さに応じて調整 */
+  bottom: 60px;
   left: 10px;
   z-index: 10;
 }
@@ -120,7 +128,7 @@ textarea {
   flex: 1;
   padding: 10px;
   border: 1px solid #ccc;
-  border-radius: 18px; /* 角を丸く */
+  border-radius: 18px;
   resize: none;
   overflow-y: auto;
   min-height: 22px; 
@@ -136,7 +144,7 @@ textarea {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  height: 42px; /* textareaの初期高さに合わせる */
+  height: 42px;
 }
 
 .emoji-button {
@@ -152,5 +160,28 @@ textarea {
 }
 .send-button:hover {
   background-color: #36a374;
+}
+
+.replying-to-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 15px;
+  background-color: #e8e9eb;
+  font-size: 0.9em;
+  border-top: 1px solid #ddd;
+}
+
+.cancel-reply-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 0 5px;
+  color: #666;
+}
+
+.cancel-reply-button:hover {
+  color: #000;
 }
 </style>
