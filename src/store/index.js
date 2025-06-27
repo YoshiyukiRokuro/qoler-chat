@@ -1,16 +1,14 @@
 import { createStore } from 'vuex';
 import axios from 'axios';
 
-// apiClientを別ファイル（例: src/utils/apiClient.js）に切り出すことを推奨しますが、
-// ここではリクエストの都度トークンをヘッダーに設定する方法を示します。
 const apiClient = axios.create({
-  baseURL: 'http://192.168.100.37:3000', // ご自身のAPIサーバーのURLに合わせてください
+  // 初期baseURLは空またはデフォルト値にしておきます
+  baseURL: '', 
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Vuexストアの初期状態
 const getInitialState = () => ({
   user: null,
   token: null,
@@ -24,16 +22,26 @@ const getInitialState = () => ({
   messages: {},
   unreadCounts: {},
   lastReadMessageIds: {},
-  ws: null, // WebSocketインスタンスをstateで管理
+  ws: null,
+  apiBaseUrl: '', // APIのベースURLをstateで管理
 });
 
 const store = createStore({
   state: getInitialState(),
   mutations: {
-    // 状態を初期状態にリセット
-    resetState(state) {
-      Object.assign(state, getInitialState());
+    setApiBaseUrl(state, baseUrl) {
+      state.apiBaseUrl = baseUrl;
+      apiClient.defaults.baseURL = baseUrl;
     },
+    resetState(state) {
+      const initial = getInitialState();
+      // apiBaseUrlはリセットしない
+      const baseUrl = state.apiBaseUrl;
+      Object.assign(state, initial);
+      state.apiBaseUrl = baseUrl;
+      apiClient.defaults.baseURL = baseUrl;
+    },
+    // ... 他にmutationsは変更なし
     setSelectedChannel(state, channelId) {
       state.selectedChannelId = channelId;
     },
@@ -91,14 +99,20 @@ const store = createStore({
     },
   },
   actions: {
+    updateApiBaseUrl({ commit }, { ip, port }) {
+      const baseUrl = `http://${ip}:${port}`;
+      commit('setApiBaseUrl', baseUrl);
+    },
     initializeWebSocket({ commit, state }) {
       if (state.ws && state.ws.readyState === WebSocket.OPEN) {
         return;
       }
-      if (!state.token) {
+      if (!state.token || !state.apiBaseUrl) {
         return;
       }
-      const ws = new WebSocket(`ws://192.168.100.37:3000?token=${state.token}`);
+      // WebSocketの接続先も動的に設定
+      const wsUrl = state.apiBaseUrl.replace(/^http/, 'ws');
+      const ws = new WebSocket(`${wsUrl}?token=${state.token}`);
 
       ws.onopen = () => {
         console.log('Connected to WebSocket server');

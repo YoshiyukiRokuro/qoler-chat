@@ -2,6 +2,11 @@
   <div class="login-container">
     <div class="login-form">
       <h2>{{ isRegistering ? 'ユーザー登録' : 'ログイン' }}</h2>
+      <input type="text" v-model="ipAddress" placeholder="IPアドレス" />
+      <input type="text" v-model="port" placeholder="ポート番号" />
+      <p class="caution-text">
+        ※通常、ここの値は変更する必要はありません。
+      </p>
       <input type="text" v-model="username" placeholder="ユーザー名" />
       <input type="password" v-model="password" placeholder="パスワード" />
       <button @click="handleSubmit">{{ isRegistering ? '登録' : 'ログイン' }}</button>
@@ -13,39 +18,54 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import { useToast } from "vue-toastification"; // useToastをインポート
+import { useToast } from "vue-toastification";
 
 export default {
   name: 'LoginView',
   setup() {
     const store = useStore();
     const router = useRouter();
-    const toast = useToast(); // toastインスタンスを取得
+    const toast = useToast();
+    const ipAddress = ref('');
+    const port = ref('');
     const username = ref('');
     const password = ref('');
     const isRegistering = ref(false);
-    // error refは不要になります
-    // const error = ref(null);
+
+    onMounted(() => {
+      // localStorageから保存されたIPとポートを読み込む
+      const savedIp = localStorage.getItem('ipAddress');
+      const savedPort = localStorage.getItem('port');
+      if (savedIp) {
+        ipAddress.value = savedIp;
+      }
+      if (savedPort) {
+        port.value = savedPort;
+      }
+    });
 
     const toggleMode = () => {
       isRegistering.value = !isRegistering.value;
-      // error.value = null;
     };
 
     const handleSubmit = async () => {
-      // error.value = null;
       try {
-        let success = false;
+        // APIクライアントのベースURLを更新
+        store.dispatch('updateApiBaseUrl', { ip: ipAddress.value, port: port.value });
+        
+        // ログイン/登録成功時にIPとポートをlocalStorageに保存
+        localStorage.setItem('ipAddress', ipAddress.value);
+        localStorage.setItem('port', port.value);
 
+        let success = false;
         if (isRegistering.value) {
           success = await store.dispatch('register', { username: username.value, password: password.value });
           if (success) {
-            // 成功時のトースト表示 ---
             toast.success("登録が完了しました。ログインしてください。");
-            isRegistering.value = false; // ログインモードに切り替え
+            isRegistering.value = false;
           }
         } else {
           success = await store.dispatch('login', { username: username.value, password: password.value });
@@ -55,17 +75,16 @@ export default {
           router.push('/');
         }
       } catch (err) {
-        // エラー時のトースト表示 ---
-        // error.value = err.message || 'エラーが発生しました。';
         toast.error(err.message || 'エラーが発生しました。');
       }
     };
 
     return {
+      ipAddress,
+      port,
       username,
       password,
       isRegistering,
-      // error, // 不要
       toggleMode,
       handleSubmit,
     };
@@ -120,5 +139,13 @@ a {
   color: red;
   margin-bottom: 10px;
   text-align: center;
+}
+/* 注意書き用のスタイルを追加 */
+.caution-text {
+  font-size: 0.8em;
+  color: #666;
+  text-align: center;
+  margin-top: -5px; /* 上の要素との距離を少し詰める */
+  margin-bottom: 15px; /* 下の要素との距離を空ける */
 }
 </style>

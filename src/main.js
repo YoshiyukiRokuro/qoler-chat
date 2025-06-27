@@ -1,17 +1,22 @@
-// src/main.js
+import { createApp } from 'vue';
+import App from './App.vue';
+import store from './store';
+import router from './router';
+import axios from 'axios';
+import Toast from "vue-toastification";
+import "vue-toastification/dist/index.css";
 
-import { createApp } from 'vue'
-import App from './App.vue'
-import store from './store'
-import router from './router'
-import axios from 'axios'
-import Toast from "vue-toastification"; // Toastをインポート
-import "vue-toastification/dist/index.css"; // CSSをインポート
+const app = createApp(App);
+app.config.globalProperties.$axios = axios;
 
-const app = createApp(App)
-app.config.globalProperties.$axios = axios
+// アプリケーション起動時にlocalStorageから接続情報を復元
+const savedIp = localStorage.getItem('ipAddress');
+const savedPort = localStorage.getItem('port');
+if (savedIp && savedPort) {
+  store.dispatch('updateApiBaseUrl', { ip: savedIp, port: savedPort });
+}
 
-// Toastプラグインをオプション付きで登録 ---
+
 const options = {
   position: "top-right",
   timeout: 5000,
@@ -27,6 +32,6 @@ const options = {
   rtl: false
 };
 
-app.use(Toast, options); // オプションを渡してuseする
+app.use(Toast, options);
 
-app.use(store).use(router).mount('#app')
+app.use(store).use(router).mount('#app');
