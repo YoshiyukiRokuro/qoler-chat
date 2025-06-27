@@ -14,9 +14,8 @@ const getInitialState = () => ({
   token: null,
   onlineUsers: [],
   channels: [
-    { id: 1, name: 'general' },
-    { id: 2, name: 'random' },
-    { id: 3, name: 'vue' }
+    { id: 1, name: '連絡' },
+    { id: 2, name: '雑談' }
   ],
   selectedChannelId: 1,
   messages: {},

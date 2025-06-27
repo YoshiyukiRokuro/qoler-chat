@@ -2,11 +2,13 @@
   <div class="login-container">
     <div class="login-form">
       <h2>{{ isRegistering ? 'ユーザー登録' : 'ログイン' }}</h2>
-      <input type="text" v-model="ipAddress" placeholder="IPアドレス" />
-      <input type="text" v-model="port" placeholder="ポート番号" />
-      <p class="caution-text">
-        ※通常、ここの値は変更する必要はありません。
-      </p>
+      <template v-if="!isRegistering">
+        <input type="text" v-model="ipAddress" placeholder="IPアドレス" />
+        <input type="text" v-model="port" placeholder="ポート番号" />
+        <p class="caution-text">
+          ※通常、ここの値は変更する必要はありません。
+        </p>
+      </template>
       <input type="text" v-model="username" placeholder="ユーザー名" />
       <input type="password" v-model="password" placeholder="パスワード" />
       <button @click="handleSubmit">{{ isRegistering ? '登録' : 'ログイン' }}</button>
@@ -29,14 +31,13 @@ export default {
     const store = useStore();
     const router = useRouter();
     const toast = useToast();
-    const ipAddress = ref('');
-    const port = ref('');
+    const ipAddress = ref('192.168.100.37');
+    const port = ref('3000');
     const username = ref('');
     const password = ref('');
     const isRegistering = ref(false);
 
     onMounted(() => {
-      // localStorageから保存されたIPとポートを読み込む
       const savedIp = localStorage.getItem('ipAddress');
       const savedPort = localStorage.getItem('port');
       if (savedIp) {
@@ -53,12 +54,11 @@ export default {
 
     const handleSubmit = async () => {
       try {
-        // APIクライアントのベースURLを更新
-        store.dispatch('updateApiBaseUrl', { ip: ipAddress.value, port: port.value });
-        
-        // ログイン/登録成功時にIPとポートをlocalStorageに保存
-        localStorage.setItem('ipAddress', ipAddress.value);
-        localStorage.setItem('port', port.value);
+        if (!isRegistering.value) {
+            store.dispatch('updateApiBaseUrl', { ip: ipAddress.value, port: port.value });
+            localStorage.setItem('ipAddress', ipAddress.value);
+            localStorage.setItem('port', port.value);
+        }
 
         let success = false;
         if (isRegistering.value) {
@@ -140,12 +140,11 @@ a {
   margin-bottom: 10px;
   text-align: center;
 }
-/* 注意書き用のスタイルを追加 */
 .caution-text {
   font-size: 0.8em;
   color: #666;
   text-align: center;
-  margin-top: -5px; /* 上の要素との距離を少し詰める */
-  margin-bottom: 15px; /* 下の要素との距離を空ける */
+  margin-top: -5px;
+  margin-bottom: 15px;
 }
 </style>
