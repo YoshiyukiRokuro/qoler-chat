@@ -7,8 +7,15 @@
         {{ isRegistering ? 'ログイン画面へ' : '新しいアカウントを作成' }}
       </a>
       <br>
-      <input type="text" v-model="username" placeholder="ユーザー名" />
+
+      <input type="text" inputmode="numeric" v-model="loginId" placeholder="職員ID (1～5桁の数字)" />
+      
+      <template v-if="isRegistering">
+        <input type="text" v-model="name" placeholder="名前" />
+      </template>
+
       <input type="password" v-model="password" placeholder="パスワード" />
+      
       <button @click="handleSubmit">{{ isRegistering ? '登録' : 'ログイン' }}</button>
 
       <template v-if="!isRegistering">
@@ -34,61 +41,57 @@ export default {
     const store = useStore();
     const router = useRouter();
     const toast = useToast();
-    const ipAddress = ref('');
+    const ipAddress = ref('192.168.100.37');
     const port = ref('3000');
-    const username = ref('');
+    
+    const name = ref('');
+    const loginId = ref('');
     const password = ref('');
     const isRegistering = ref(false);
 
-    // コンポーネント表示時にlocalStorageから各種情報を読み込む
     onMounted(() => {
-      // IPアドレスを読み込む
       const savedIp = localStorage.getItem('ipAddress');
+      const savedPort = localStorage.getItem('port');
       if (savedIp) {
         ipAddress.value = savedIp;
       }
-      // ポート番号を読み込む
-      const savedPort = localStorage.getItem('port');
       if (savedPort) {
         port.value = savedPort;
       }
-      // ユーザー名を読み込む
-      const savedUsername = localStorage.getItem('lastLoggedInUser');
-      if (savedUsername) {
-        username.value = savedUsername;
+      const savedLoginId = localStorage.getItem('lastLoggedInId');
+      if (savedLoginId) {
+        loginId.value = savedLoginId;
       }
     });
 
     const toggleMode = () => {
       isRegistering.value = !isRegistering.value;
+      name.value = '';
+      password.value = '';
+      // ログインIDはモード切替時にクリアしない方が便利な場合もあるため、そのままにする
     };
 
     const handleSubmit = async () => {
       try {
-        if (!isRegistering.value) {
-            store.dispatch('updateApiBaseUrl', { ip: ipAddress.value, port: port.value });
-            // IPアドレスとポート番号をlocalStorageに保存
-            localStorage.setItem('ipAddress', ipAddress.value);
-            localStorage.setItem('port', port.value);
-        }
+        // IPとPortはどちらの処理でも先に設定・保存
+        store.dispatch('updateApiBaseUrl', { ip: ipAddress.value, port: port.value });
+        localStorage.setItem('ipAddress', ipAddress.value);
+        localStorage.setItem('port', port.value);
 
-        let success = false;
-        if (isRegistering.value) {
-          success = await store.dispatch('register', { username: username.value, password: password.value });
+        if (isRegistering.value) { // 登録処理
+          const success = await store.dispatch('register', { id: loginId.value, username: name.value, password: password.value });
           if (success) {
-            toast.success("登録が完了しました。ログインしてください。");
+            toast.success(`ID「${loginId.value}」で登録が完了しました。ログインしてください。`);
             isRegistering.value = false;
+            name.value = '';
+            password.value = '';
           }
-        } else {
-          success = await store.dispatch('login', { username: username.value, password: password.value });
-          if (success) {
-            // ログイン成功時にユーザー名をlocalStorageへ保存
-            localStorage.setItem('lastLoggedInUser', username.value);
-          }
-        }
-        
-        if (success && !isRegistering.value) {
-          router.push('/');
+        } else { // ログイン処理
+            const success = await store.dispatch('login', { id: loginId.value, password: password.value });
+            if (success) {
+              localStorage.setItem('lastLoggedInId', loginId.value);
+              router.push('/');
+            }
         }
       } catch (err) {
         toast.error(err.message || 'エラーが発生しました。');
@@ -98,7 +101,8 @@ export default {
     return {
       ipAddress,
       port,
-      username,
+      name,
+      loginId,
       password,
       isRegistering,
       toggleMode,
