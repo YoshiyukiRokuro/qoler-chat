@@ -11,18 +11,13 @@
       <input type="password" v-model="password" placeholder="パスワード" />
       <button @click="handleSubmit">{{ isRegistering ? '登録' : 'ログイン' }}</button>
 
-
-
       <template v-if="!isRegistering">
         <p class="caution-text">
           ※以下は初回起動時以外は変更する必要無し<br>
         </p>
         <input type="text" v-model="ipAddress" placeholder="IPアドレス" />
         <input type="text" v-model="port" placeholder="ポート番号" />
-
       </template>
-
-
     </div>
   </div>
 </template>
@@ -39,20 +34,28 @@ export default {
     const store = useStore();
     const router = useRouter();
     const toast = useToast();
-    const ipAddress = ref('192.168.100.37');
+    const ipAddress = ref('');
     const port = ref('3000');
     const username = ref('');
     const password = ref('');
     const isRegistering = ref(false);
 
+    // コンポーネント表示時にlocalStorageから各種情報を読み込む
     onMounted(() => {
+      // IPアドレスを読み込む
       const savedIp = localStorage.getItem('ipAddress');
-      const savedPort = localStorage.getItem('port');
       if (savedIp) {
         ipAddress.value = savedIp;
       }
+      // ポート番号を読み込む
+      const savedPort = localStorage.getItem('port');
       if (savedPort) {
         port.value = savedPort;
+      }
+      // ユーザー名を読み込む
+      const savedUsername = localStorage.getItem('lastLoggedInUser');
+      if (savedUsername) {
+        username.value = savedUsername;
       }
     });
 
@@ -64,6 +67,7 @@ export default {
       try {
         if (!isRegistering.value) {
             store.dispatch('updateApiBaseUrl', { ip: ipAddress.value, port: port.value });
+            // IPアドレスとポート番号をlocalStorageに保存
             localStorage.setItem('ipAddress', ipAddress.value);
             localStorage.setItem('port', port.value);
         }
@@ -77,6 +81,10 @@ export default {
           }
         } else {
           success = await store.dispatch('login', { username: username.value, password: password.value });
+          if (success) {
+            // ログイン成功時にユーザー名をlocalStorageへ保存
+            localStorage.setItem('lastLoggedInUser', username.value);
+          }
         }
         
         if (success && !isRegistering.value) {
