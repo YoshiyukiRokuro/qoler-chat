@@ -2,7 +2,6 @@ import { createStore } from 'vuex';
 import axios from 'axios';
 
 const apiClient = axios.create({
-  // 初期baseURLは空またはデフォルト値にしておきます
   baseURL: '', 
   headers: {
     'Content-Type': 'application/json',
@@ -13,16 +12,13 @@ const getInitialState = () => ({
   user: null,
   token: null,
   onlineUsers: [],
-  channels: [
-    { id: 1, name: '連絡' },
-    { id: 2, name: '雑談' }
-  ],
-  selectedChannelId: 1,
+  channels: [],
+  selectedChannelId: null,
   messages: {},
   unreadCounts: {},
   lastReadMessageIds: {},
   ws: null,
-  apiBaseUrl: '', // APIのベースURLをstateで管理
+  apiBaseUrl: '',
 });
 
 const store = createStore({
@@ -34,13 +30,25 @@ const store = createStore({
     },
     resetState(state) {
       const initial = getInitialState();
-      // apiBaseUrlはリセットしない
       const baseUrl = state.apiBaseUrl;
       Object.assign(state, initial);
       state.apiBaseUrl = baseUrl;
       apiClient.defaults.baseURL = baseUrl;
     },
-    // ... 他にmutationsは変更なし
+    setChannels(state, channels) {
+      state.channels = channels;
+    },
+    addChannel(state, channel) {
+      if (!state.channels.some(c => c.id === channel.id)) {
+        state.channels.push(channel);
+      }
+    },
+    removeChannel(state, channelId) {
+      state.channels = state.channels.filter(c => c.id !== channelId);
+      if (state.selectedChannelId === channelId) {
+        state.selectedChannelId = state.channels.length > 0 ? state.channels[0].id : null;
+      }
+    },
     setSelectedChannel(state, channelId) {
       state.selectedChannelId = channelId;
     },
@@ -102,6 +110,10 @@ const store = createStore({
       const baseUrl = `http://${ip}:${port}`;
       commit('setApiBaseUrl', baseUrl);
     },
+    async initializeApp({ dispatch }) {
+      await dispatch('fetchChannels');
+      dispatch('initializeWebSocket');
+    },
     initializeWebSocket({ commit, state }) {
       if (state.ws && state.ws.readyState === WebSocket.OPEN) {
         return;
@@ -109,7 +121,6 @@ const store = createStore({
       if (!state.token || !state.apiBaseUrl) {
         return;
       }
-      // WebSocketの接続先も動的に設定
       const wsUrl = state.apiBaseUrl.replace(/^http/, 'ws');
       const ws = new WebSocket(`${wsUrl}?token=${state.token}`);
 
@@ -149,21 +160,58 @@ const store = createStore({
             });
           } else if (payload.type === 'user_list_update') {
             commit('setOnlineUsers', payload.data);
+          } else if (payload.type === 'channel_created') {
+            commit('addChannel', payload.data);
+          } else if (payload.type === 'channel_deleted') {
+            commit('removeChannel', payload.id);
           }
         } catch (e) {
           console.error('Failed to parse message:', event.data, e);
         }
       };
     },
-
+    async fetchChannels({ commit, state }) {
+      if (!state.token) return;
+      try {
+        const { data } = await apiClient.get('/channels', {
+          headers: { Authorization: `Bearer ${state.token}` }
+        });
+        commit('setChannels', data);
+        if (state.selectedChannelId === null && data.length > 0) {
+          commit('setSelectedChannel', data[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch channels:', error);
+      }
+    },
+    async createChannel({ state }, channelName) {
+      try {
+        await apiClient.post('/channels', { name: channelName }, {
+          headers: { Authorization: `Bearer ${state.token}` }
+        });
+      } catch (error) {
+        console.error('Failed to create channel:', error);
+        throw error;
+      }
+    },
+    async deleteChannel({ state }, channelId) {
+      try {
+        await apiClient.delete(`/channels/${channelId}`, {
+          headers: { Authorization: `Bearer ${state.token}` }
+        });
+      } catch (error) {
+        console.error('Failed to delete channel:', error);
+        throw error;
+      }
+    },
     async selectChannel({ commit, dispatch }, channelId) {
         commit('setSelectedChannel', channelId);
         await dispatch('loadMessages', channelId);
         await dispatch('fetchLastReadMessageId', channelId);
         dispatch('markChannelAsRead', channelId);
     },
-
     async loadMessages({ commit, state }, channelId) {
+      if (!channelId) return;
       try {
         const response = await apiClient.get(`/messages/${channelId}`, {
           headers: { Authorization: `Bearer ${state.token}` }
@@ -173,7 +221,6 @@ const store = createStore({
         console.error('Failed to load messages:', error);
       }
     },
-
     async register(_context, { username, password }) {
       try {
         await apiClient.post('/register', { username, password });
@@ -183,27 +230,24 @@ const store = createStore({
         throw new Error(message);
       }
     },
-
     async login({ commit, dispatch }, { username, password }) {
       try {
         const { data } = await apiClient.post('/login', { username, password });
         commit('setUser', data.user);
         commit('setToken', data.token);
-        dispatch('initializeWebSocket');
+        await dispatch('initializeApp');
         return true;
       } catch (error) {
         const message = error.response?.data?.error || 'ログインに失敗しました。';
         throw new Error(message);
       }
     },
-
     logout({ commit, state }) {
       if (state.ws) {
         state.ws.close();
       }
       commit('resetState');
     },
-
     async sendMessage({ state }, text) {
       if (!state.user) {
         console.error('User not logged in.');
@@ -221,7 +265,6 @@ const store = createStore({
         console.error('Failed to send message:', error);
       }
     },
-
     async deleteMessage({state}, messageId) {
       try {
         await apiClient.delete(`/messages/${messageId}`, {
@@ -231,7 +274,6 @@ const store = createStore({
         console.error('Failed to delete message:', error);
       }
     },
-
     async markChannelAsRead({ state, commit }, channelId) {
       const messages = state.messages[channelId];
       if (messages && messages.length > 0) {
@@ -246,7 +288,6 @@ const store = createStore({
         }
       }
     },
-    
     async fetchUnreadCounts({ commit, state }) {
       try {
         const { data } = await apiClient.get('/messages/unread-counts', {
@@ -257,7 +298,6 @@ const store = createStore({
         console.error('Failed to fetch unread counts:', error);
       }
     },
-    
     async fetchLastReadMessageId({ commit, state }, channelId) {
       try {
         const { data } = await apiClient.get(`/channels/${channelId}/last-read`, {

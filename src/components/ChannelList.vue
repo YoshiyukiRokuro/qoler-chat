@@ -1,7 +1,10 @@
 <template>
   <div class="channel-list">
     <div class="channels-section">
-      <h2>Channels</h2>
+      <div class="channels-header">
+        <h2>チャンネル</h2>
+        <button @click="showCreateModal = true" class="add-channel-button" title="新しいチャンネルを作成">+</button>
+      </div>
       <ul>
         <li
           v-for="channel in channels"
@@ -9,10 +12,20 @@
           @click="selectChannel(channel.id)"
           :class="{ active: channel.id === selectedChannelId }"
         >
-          # {{ channel.name }}
-          <span v-if="unreadCounts[channel.id] > 0" class="unread-badge">
-            {{ unreadCounts[channel.id] }}
-          </span>
+          <span class="channel-name"># {{ channel.name }}</span>
+          <div class="channel-actions">
+            <span v-if="unreadCounts[channel.id] > 0" class="unread-badge">
+              {{ unreadCounts[channel.id] }}
+            </span>
+            <button
+              v-if="channel.is_deletable"
+              @click.stop="promptDeleteChannel(channel)"
+              class="delete-channel-button"
+              title="チャンネルを削除"
+            >
+              ×
+            </button>
+          </div>
         </li>
       </ul>
     </div>
@@ -32,25 +45,50 @@
         <button @click="handleLogout" class="logout-button">ログアウト</button>
       </div>
     </div>
+    
+    <CreateChannelModal
+      :show="showCreateModal"
+      @close="showCreateModal = false"
+      @confirm="handleCreateChannel"
+    />
+    
+    <DeleteChannelModal
+      :show="showDeleteModal"
+      :channel="channelToDelete"
+      @close="showDeleteModal = false"
+      @confirm="handleDeleteChannel"
+    />
   </div>
 </template>
 
 <script>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import { useToast } from "vue-toastification";
+import DeleteChannelModal from './DeleteChannelModal.vue';
+import CreateChannelModal from './CreateChannelModal.vue'; // インポート
 
 export default {
   name: 'ChannelList',
+  components: {
+    DeleteChannelModal,
+    CreateChannelModal, // 登録
+  },
   setup() {
     const store = useStore();
     const router = useRouter();
+    const toast = useToast();
 
     const channels = computed(() => store.getters.channels);
     const selectedChannelId = computed(() => store.state.selectedChannelId);
     const currentUser = computed(() => store.getters.currentUser);
     const onlineUsers = computed(() => store.getters.onlineUsers);
     const unreadCounts = computed(() => store.getters.unreadCounts);
+
+    const showCreateModal = ref(false);
+    const showDeleteModal = ref(false);
+    const channelToDelete = ref(null);
 
     const selectChannel = (id) => {
       store.dispatch('selectChannel', id);
@@ -60,8 +98,40 @@ export default {
       store.dispatch('logout');
       router.push('/login');
     };
+    
+    const handleCreateChannel = async (channelName) => {
+      if (channelName && channelName.trim()) {
+        try {
+          await store.dispatch('createChannel', channelName.trim());
+          showCreateModal.value = false;
+          toast.success(`チャンネル "${channelName.trim()}" を作成しました。`);
+        } catch (error) {
+          toast.error(error.response?.data?.error || 'チャンネルの作成に失敗しました。');
+        }
+      }
+    };
+
+    const promptDeleteChannel = (channel) => {
+      channelToDelete.value = channel;
+      showDeleteModal.value = true;
+    };
+
+    const handleDeleteChannel = async () => {
+      if (channelToDelete.value) {
+        try {
+          await store.dispatch('deleteChannel', channelToDelete.value.id);
+          showDeleteModal.value = false;
+          toast.success(`チャンネル "${channelToDelete.value.name}" を削除しました。`);
+        } catch (error) {
+          toast.error(error.response?.data?.error || 'チャンネルの削除に失敗しました。');
+        }
+      }
+    };
 
     onMounted(() => {
+      if (store.getters.isAuthenticated && store.state.channels.length === 0) {
+        store.dispatch('fetchChannels');
+      }
       store.dispatch('fetchUnreadCounts');
     });
 
@@ -72,7 +142,13 @@ export default {
       onlineUsers,
       unreadCounts,
       selectChannel,
-      handleLogout
+      handleLogout,
+      showCreateModal,
+      handleCreateChannel,
+      showDeleteModal,
+      channelToDelete,
+      promptDeleteChannel,
+      handleDeleteChannel,
     };
   }
 };
@@ -80,20 +156,39 @@ export default {
 
 <style scoped>
 .channel-list {
-  width: 220px;
+  width: 240px;
   background-color: #f2f3f5;
   border-right: 1px solid #ddd;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 }
-.channels-section {
+.channels-section, .online-users-section {
   padding: 10px;
+}
+.channels-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
 }
 h2 {
   padding-left: 10px;
   font-size: 1em;
   color: #666;
+  margin: 0;
+}
+.add-channel-button {
+  background: none;
+  border: none;
+  font-size: 1.6em;
+  font-weight: bold;
+  cursor: pointer;
+  color: #666;
+  padding: 0 5px;
+  line-height: 1;
+}
+.add-channel-button:hover {
+  color: #000;
 }
 ul {
   list-style-type: none;
@@ -101,7 +196,7 @@ ul {
   margin: 0;
 }
 li {
-  padding: 10px 20px;
+  padding: 8px 15px;
   cursor: pointer;
   border-radius: 5px;
   font-weight: 500;
@@ -116,15 +211,41 @@ li.active {
   background-color: #42b983;
   color: white;
 }
-
-/* オンラインユーザーセクションのスタイル */
+.channel-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.channel-actions {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding-left: 10px;
+}
+.delete-channel-button {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.4em;
+  line-height: 1;
+  padding: 0 0 0 5px;
+  opacity: 0.5;
+  visibility: hidden;
+}
+li:hover .delete-channel-button {
+  visibility: visible;
+}
+.delete-channel-button:hover {
+  opacity: 1;
+  color: #f04747;
+}
 .online-users-section {
-  padding: 10px;
-  flex-grow: 1; /* 空いたスペースを埋める */
+  flex-grow: 1;
   overflow-y: auto;
 }
 .online-user {
-  padding: 5px 20px;
+  padding: 5px 15px;
   color: #333;
   font-weight: normal;
   font-size: 0.9em;
@@ -132,12 +253,10 @@ li.active {
   align-items: center;
 }
 .online-indicator {
-  color: #42b983; /* オンラインを示す緑色 */
+  color: #42b983;
   margin-right: 8px;
   font-size: 0.8em;
 }
-
-
 .user-section {
   padding: 15px;
   border-top: 1px solid #ddd;
@@ -165,7 +284,6 @@ li.active {
 .logout-button:hover {
   background-color: #f0f0f0;
 }
-
 .unread-badge {
   background-color: #f04747;
   color: white;
@@ -173,6 +291,6 @@ li.active {
   padding: 2px 6px;
   font-size: 0.75em;
   font-weight: bold;
-  margin-left: 10px;
+  margin-left: 5px;
 }
 </style>
