@@ -1,20 +1,28 @@
 <template>
   <div class="login-container">
     <div class="login-form">
-      <h2>{{ isRegistering ? 'ユーザー登録' : 'ログイン' }}</h2>
-      <template v-if="!isRegistering">
-        <input type="text" v-model="ipAddress" placeholder="IPアドレス" />
-        <input type="text" v-model="port" placeholder="ポート番号" />
-        <p class="caution-text">
-          ※通常、ここの値は変更する必要はありません。
-        </p>
-      </template>
-      <input type="text" v-model="username" placeholder="ユーザー名" />
-      <input type="password" v-model="password" placeholder="パスワード" />
-      <button @click="handleSubmit">{{ isRegistering ? '登録' : 'ログイン' }}</button>
+      <h2>{{ isRegistering ? 'ユーザー登録' : 'クオラチャットログイン' }}</h2>
+
       <a href="#" @click.prevent="toggleMode">
         {{ isRegistering ? 'ログイン画面へ' : '新しいアカウントを作成' }}
       </a>
+      <br>
+      <input type="text" v-model="username" placeholder="ユーザー名" />
+      <input type="password" v-model="password" placeholder="パスワード" />
+      <button @click="handleSubmit">{{ isRegistering ? '登録' : 'ログイン' }}</button>
+
+
+
+      <template v-if="!isRegistering">
+        <p class="caution-text">
+          ※以下は初回起動時以外は変更する必要無し<br>
+        </p>
+        <input type="text" v-model="ipAddress" placeholder="IPアドレス" />
+        <input type="text" v-model="port" placeholder="ポート番号" />
+
+      </template>
+
+
     </div>
   </div>
 </template>

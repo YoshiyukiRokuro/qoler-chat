@@ -200,7 +200,7 @@ strong {
   margin: 0;
   word-wrap: break-word;
   white-space: pre-wrap;
-  /* この行を追加 */
+  font-size:1.2em;
 }
 
 
