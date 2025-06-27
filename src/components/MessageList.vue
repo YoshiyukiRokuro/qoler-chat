@@ -139,17 +139,24 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
-  /* モーダルの位置の基準にする */
-  overflow: hidden;
-  /* 追加 */
+  overflow: hidden; /* この行は変更なし */
 }
 
 .message-list {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: hidden;
+  /* overflow-y: hidden; を削除 */
+  overflow-y: auto; /* この行に変更 */
   background-color: #f0f2f5;
+}
+
+.messages {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto; /* この行は変更なし */
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -157,14 +164,6 @@ export default {
   border-bottom: 1px solid #ddd;
   background-color: #fff;
   text-align: center;
-}
-
-.messages {
-  flex: 1;
-  padding: 15px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
 }
 
 .message-wrapper {

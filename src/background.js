@@ -24,6 +24,7 @@ async function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 800,
+    title: 'QolerChat', // この行を追加します
     maximizable: true,
     autoHideMenuBar: true,
     webPreferences: {
