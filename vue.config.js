@@ -20,8 +20,12 @@ module.exports = defineConfig({
   },
   pluginOptions: {
     electronBuilder: {
+      builderOptions: {
+        productName: "クオラチャット" // この行を追加
+      },
       nodeIntegrationInWorker: true,
       preload: 'src/preload.js'
     }
+
   }
 })
