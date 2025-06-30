@@ -42,7 +42,7 @@ export default {
     const router = useRouter();
     const toast = useToast();
     const ipAddress = ref('');
-    const port = ref('3000');
+    const port = ref('3001');
     
     const name = ref('');
     const loginId = ref('');

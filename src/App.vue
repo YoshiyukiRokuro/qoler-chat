@@ -24,7 +24,7 @@ export default {
 
         // APIのURLを設定（localStorageから読み込む）
         const savedIp = localStorage.getItem('ipAddress') || ''; // デフォルト値
-        const savedPort = localStorage.getItem('port') || '3000'; // デフォルト値
+        const savedPort = localStorage.getItem('port') || '3001'; // デフォルト値
         store.dispatch('updateApiBaseUrl', { ip: savedIp, port: savedPort });
 
         // 自動ログインアクションを実行
