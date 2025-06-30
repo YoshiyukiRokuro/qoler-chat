@@ -21,7 +21,7 @@ module.exports = defineConfig({
   pluginOptions: {
     electronBuilder: {
       builderOptions: {
-        productName: "クオラチャット" // この行を追加
+        productName: "クオラチャット"
       },
       nodeIntegrationInWorker: true,
       preload: 'src/preload.js'

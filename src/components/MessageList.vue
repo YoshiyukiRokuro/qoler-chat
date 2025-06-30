@@ -24,7 +24,7 @@
                     ×
                   </button>
                 </div>
-                <p class="text">{{ message.text }}</p>
+                <p class="text" v-html="renderMessageText(message.text)"></p>
               </div>
             </div>
           </template>
@@ -106,6 +106,25 @@ export default {
       }
     }, { deep: true });
 
+    const renderMessageText = (text) => {
+      // HTTP/HTTPS URLを検出
+      let newText = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+
+      // \\から始まる共有フォルダパスを検出（例: \\server\share\folder）
+      newText = newText.replace(/(\\?(\\[^\\\s]+){2,})/g, (match) => {
+        // file://プロトコルを使用してローカルパスとしてリンク
+        return `<a href="file:///${match.replace(/\\/g, '/')}" target="_blank" rel="noopener noreferrer">${match}</a>`;
+      });
+
+      // C:から始まる内部ドライブパスを検出（例: C:\path\to\file）
+      newText = newText.replace(/([A-Za-z]:\\[^:\n\r\t"]*)/g, (match) => {
+        // file://プロトコルを使用してローカルパスとしてリンク
+        return `<a href="file:///${match.replace(/\\/g, '/')}" target="_blank" rel="noopener noreferrer">${match}</a>`;
+      });
+      
+      return newText;
+    };
+
     return {
       selectedChannel,
       messages,
@@ -118,6 +137,7 @@ export default {
       handleCancelDelete,
       firstUnreadIndex,
       startReply,
+      renderMessageText
     };
   }
 };

@@ -4,7 +4,7 @@ import axios from 'axios';
 import store from '../store'; // Vuexストアをインポート
 
 const apiClient = axios.create({
-  baseURL: 'http://192.168.100.37:3000' // ご自身のAPIサーバーのURLに合わせてください
+  baseURL: ''
 });
 
 // リクエストインターセプターを設定

@@ -20,7 +20,7 @@
 
       <template v-if="!isRegistering">
         <p class="caution-text">
-          ※以下は初回起動時以外は変更する必要無し<br>
+          ※以下は接続設定です。<br>初回起動時以外は変更する必要ありません。
         </p>
         <input type="text" v-model="ipAddress" placeholder="IPアドレス" />
         <input type="text" v-model="port" placeholder="ポート番号" />
@@ -41,7 +41,7 @@ export default {
     const store = useStore();
     const router = useRouter();
     const toast = useToast();
-    const ipAddress = ref('192.168.100.37');
+    const ipAddress = ref('');
     const port = ref('3000');
     
     const name = ref('');
