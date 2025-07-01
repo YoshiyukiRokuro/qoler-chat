@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { useToast } from "vue-toastification";
@@ -89,6 +89,12 @@ export default {
     const showCreateModal = ref(false);
     const showDeleteModal = ref(false);
     const channelToDelete = ref(null);
+
+    // 【ログ追加】 unreadCounts の変更を監視
+    watch(unreadCounts, (newCounts, oldCounts) => {
+      console.log('[ChannelList] unreadCountsが変更されました。', { newCounts, oldCounts });
+    }, { deep: true });
+
 
     const selectChannel = (id) => {
       store.dispatch('selectChannel', id);
@@ -129,9 +135,11 @@ export default {
     };
 
     onMounted(() => {
+      console.log('[ChannelList] コンポーネントがマウントされました。');
       if (store.getters.isAuthenticated && store.state.channels.length === 0) {
         store.dispatch('fetchChannels');
       }
+      console.log('[ChannelList] onMountedフックからfetchUnreadCountsをディスパッチします。');
       store.dispatch('fetchUnreadCounts');
     });
 

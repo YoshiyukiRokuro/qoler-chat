@@ -90,6 +90,7 @@ const store = createStore({
       state.unreadCounts[channelId] = count;
     },
     setAllUnreadCounts(state, counts) {
+      console.log('[Vuex Mutation] setAllUnreadCounts: stateに保存するデータ:', counts);
       state.unreadCounts = counts;
     },
     clearUnreadCount(state, channelId) {
@@ -320,9 +321,11 @@ const store = createStore({
     },
     async fetchUnreadCounts({ commit, state }) {
       try {
+        console.log('[Vuex Action] fetchUnreadCounts: 開始');
         const { data } = await apiClient.get("/messages/unread-counts", {
           headers: { Authorization: `Bearer ${state.token}` },
         });
+        console.log('[Vuex Action] fetchUnreadCounts: サーバーからのレスポンス:', data);
         commit("setAllUnreadCounts", data);
       } catch (error) {
         console.error("Failed to fetch unread counts:", error);
