@@ -10,9 +10,16 @@
             <div v-if="index === firstUnreadIndex" class="unread-separator">
               <span>ここから未読</span>
             </div>
-            <div class="message-wrapper" :class="{ own: currentUser && message.user === currentUser.username }">
+            <div
+              class="message-wrapper"
+              :data-message-id="message.id"
+              :class="{ 
+                own: currentUser && message.user === currentUser.username,
+                highlight: message.id === highlightedMessageId
+              }"
+            >
               <div class="message">
-                <div v-if="message.replyToId" class="reply-context">
+                <div v-if="message.replyToId" class="reply-context" @click="scrollToMessage(message.replyToId)">
                   <small>↪ <strong>{{ message.repliedToUser }}</strong> への返信</small>
                   <p class="reply-text">{{ message.repliedToText }}</p>
                 </div>
@@ -35,12 +42,16 @@
         <p>最初のメッセージを送信しましょう！</p>
       </div>
     </div>
+        <button v-if="showScrollToBottomButton" @click="scrollToBottom" class="scroll-to-bottom-button">
+      ▼
+    </button>
+
     <ConfirmModal :show="showConfirmModal" title="メッセージの削除" message="本当にこのメッセージを削除しますか？" @confirm="handleConfirmDelete" @cancel="handleCancelDelete" />
   </div>
 </template>
 
 <script>
-import { computed, ref, watch, nextTick } from 'vue';
+import { computed, ref, watch, nextTick, onMounted, onUnmounted, onDeactivated } from 'vue';
 import { useStore } from 'vuex';
 import ConfirmModal from './ConfirmModal.vue';
 
@@ -54,6 +65,8 @@ export default {
     const messageContainer = ref(null);
     const showConfirmModal = ref(false);
     const messageIdToDelete = ref(null);
+    const highlightedMessageId = ref(null); // ★ ハイライト用のIDを保持
+    const showScrollToBottomButton = ref(false); // ★ ボタン表示用の状態を追加
 
     const selectedChannel = computed(() => store.getters.selectedChannel);
     const messages = computed(() => store.getters.messagesForSelectedChannel);
@@ -148,6 +161,60 @@ export default {
       
       return newText;
     };
+    // ★ 返信元のメッセージにスクロールする関数を追加
+    const scrollToMessage = (messageId) => {
+      const targetElement = document.querySelector(`[data-message-id='${messageId}']`);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // ハイライト処理
+        highlightedMessageId.value = messageId;
+        setTimeout(() => {
+          highlightedMessageId.value = null;
+        }, 1500); // 1.5秒後にハイライトを解除
+      }
+    };
+    // ★ 一番下にスクロールする関数を追加
+    const scrollToBottom = () => {
+      const container = messageContainer.value;
+      if (container) {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+      }
+    };
+
+    // ★ スクロールイベントを処理する関数を追加
+    const handleScroll = () => {
+      const container = messageContainer.value;
+      if (container) {
+        const threshold = 200; // ボタンを表示するスクロール位置の閾値
+        const isScrolledUp = container.scrollHeight - container.scrollTop - container.clientHeight > threshold;
+        showScrollToBottomButton.value = isScrolledUp;
+      }
+    };
+    
+    // ★ コンポーネントがマウントされたらイベントリスナーを追加
+    onMounted(() => {
+      const container = messageContainer.value;
+      if (container) {
+        container.addEventListener('scroll', handleScroll);
+      }
+    });
+
+    // ★ コンポーネントが破棄される前にイベントリスナーを削除
+    onUnmounted(() => {
+      const container = messageContainer.value;
+      if (container) {
+        container.removeEventListener('scroll', handleScroll);
+      }
+    });
+
+    // ★ コンポーネントが非アクティブになった際にもリスナーを削除
+    onDeactivated(() => {
+        const container = messageContainer.value;
+        if (container) {
+            container.removeEventListener('scroll', handleScroll);
+        }
+    });
 
     return {
       selectedChannel,
@@ -161,7 +228,11 @@ export default {
       handleCancelDelete,
       firstUnreadIndex,
       startReply,
-      renderMessageText
+      renderMessageText,
+      scrollToMessage,
+      highlightedMessageId,
+      showScrollToBottomButton, // ★ return に追加
+      scrollToBottom,           // ★ return に追加
     };
   }
 };
@@ -313,4 +384,32 @@ strong {
   text-overflow: ellipsis;
   color: #555;
 }
+
+.message-wrapper.highlight .message {
+  transition: background-color 0.5s ease-out;
+  background-color: #fff0b3; /* ハイライトの色 */
+}
+
+
+.scroll-to-bottom-button {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(66, 185, 131, 0.8);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.9em;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 10;
+  transition: opacity 0.3s ease;
+}
+
+.scroll-to-bottom-button:hover {
+  background-color: rgba(54, 163, 116, 1);
+}
+
 </style>
