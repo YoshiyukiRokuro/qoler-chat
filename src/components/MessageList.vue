@@ -1,6 +1,6 @@
 <template>
   <div class="message-list-wrapper">
-    <div class="message-list">
+    <div class="message-list" ref="messageContainer">
       <div v-if="messages.length" class="messages-inner">
         <div class="header">
           <h2># {{ selectedChannel ? selectedChannel.name : '' }}</h2>
@@ -99,11 +99,35 @@ export default {
     };
 
     watch(messages, async () => {
+      // Vue の DOM 更新を待つ
       await nextTick();
-      const container = messageContainer.value;
-      if (container) {
+
+      // ブラウザの描画サイクルに処理を委ねるため setTimeout を使用
+      setTimeout(() => {
+        const container = messageContainer.value;
+        if (!container) return;
+
+        // デバッグ用ログ
+        console.log('コンテナの状態 (setTimeout内):', {
+          scrollHeight: container.scrollHeight,
+          clientHeight: container.clientHeight,
+          firstUnreadIndex: firstUnreadIndex.value,
+        });
+
+        // 未読メッセージがある場合
+        if (firstUnreadIndex.value !== -1) {
+          const separator = container.querySelector('.unread-separator');
+          if (separator) {
+            // 未読セパレータへスクロール
+            container.scrollTop = separator.offsetTop - 20;
+            return;
+          }
+        }
+
+        // それ以外は一番下へスクロール
         container.scrollTop = container.scrollHeight;
-      }
+      }, 0); // 0ミリ秒の遅延で、イベントキューの最後に処理を配置
+
     }, { deep: true });
 
     const renderMessageText = (text) => {
@@ -180,7 +204,6 @@ export default {
 .messages {
   flex: 1;
   padding: 15px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }

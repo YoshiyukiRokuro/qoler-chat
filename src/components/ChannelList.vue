@@ -38,7 +38,7 @@
     </div>
 
     <div class="online-users-section">
-      <h2>接続：{{ onlineUsers.length }}人</h2>
+      <h2>接続者：{{ onlineUsers.length }}人</h2>
       <ul>
         <li v-for="user in onlineUsers" :key="user" class="online-user">
           <span class="online-indicator">●&nbsp;&nbsp;<span style="color:dimgray">{{ user }}</span></span>
