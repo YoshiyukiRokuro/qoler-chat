@@ -14,7 +14,7 @@
       </div>
       <ul>
         <li
-          v-for="channel in channels"
+          v-for="channel in publicChannels"
           :key="channel.id"
           @click="selectChannel(channel.id)"
           :class="{ active: channel.id === selectedChannelId }"
@@ -29,6 +29,35 @@
               @click.stop="promptDeleteChannel(channel)"
               class="delete-channel-button"
               title="チャンネルを削除"
+            >
+              ×
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="channels-section">
+      <div class="channels-header">
+        <h2>グループ</h2>
+        <button @click="showCreateGroupModal = true" class="add-channel-button" title="新しいグループを作成">+</button>
+      </div>
+      <ul>
+        <li
+          v-for="channel in groupChannels"
+          :key="channel.id"
+          @click="selectChannel(channel.id)"
+          :class="{ active: channel.id === selectedChannelId }"
+        >
+          <span class="channel-name"># {{ channel.name }}</span>
+           <div class="channel-actions">
+            <span v-if="unreadCounts[channel.id] > 0" class="unread-badge">
+              {{ unreadCounts[channel.id] }}
+            </span>
+            <button
+              @click.stop="promptDeleteChannel(channel)"
+              class="delete-channel-button"
+              title="グループを削除"
             >
               ×
             </button>
@@ -58,29 +87,38 @@
       @close="showDeleteModal = false"
       @confirm="handleDeleteChannel"
     />
+
+    <CreateGroupModal
+      :show="showCreateGroupModal"
+      @close="showCreateGroupModal = false"
+      @confirm="handleCreateGroup"
+    />
   </div>
 </template>
 
 <script>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { useToast } from "vue-toastification";
 import DeleteChannelModal from './DeleteChannelModal.vue';
 import CreateChannelModal from './CreateChannelModal.vue';
+import CreateGroupModal from './CreateGroupModal.vue';
 
 export default {
   name: 'ChannelList',
   components: {
     DeleteChannelModal,
     CreateChannelModal,
+    CreateGroupModal,
   },
   setup() {
     const store = useStore();
     const router = useRouter();
     const toast = useToast();
 
-    const channels = computed(() => store.getters.channels);
+    const publicChannels = computed(() => store.getters.publicChannels);
+    const groupChannels = computed(() => store.getters.groupChannels);
     const selectedChannelId = computed(() => store.state.selectedChannelId);
     const currentUser = computed(() => store.getters.currentUser);
     const onlineUsers = computed(() => store.getters.onlineUsers);
@@ -89,12 +127,7 @@ export default {
     const showCreateModal = ref(false);
     const showDeleteModal = ref(false);
     const channelToDelete = ref(null);
-
-    // 【ログ追加】 unreadCounts の変更を監視
-    watch(unreadCounts, (newCounts, oldCounts) => {
-      console.log('[ChannelList] unreadCountsが変更されました。', { newCounts, oldCounts });
-    }, { deep: true });
-
+    const showCreateGroupModal = ref(false);
 
     const selectChannel = (id) => {
       store.dispatch('selectChannel', id);
@@ -134,17 +167,28 @@ export default {
       }
     };
 
-    onMounted(() => {
-      console.log('[ChannelList] コンポーネントがマウントされました。');
-      if (store.getters.isAuthenticated && store.state.channels.length === 0) {
-        store.dispatch('fetchChannels');
+    const handleCreateGroup = async ({ name, memberIds }) => {
+      if (name && memberIds.length > 0) {
+        try {
+          await store.dispatch('createGroupChannel', { name, memberIds });
+          showCreateGroupModal.value = false;
+          toast.success(`グループ "${name}" を作成しました。`);
+        } catch (error) {
+          toast.error(error.response?.data?.error || 'グループの作成に失敗しました。');
+        }
       }
-      console.log('[ChannelList] onMountedフックからfetchUnreadCountsをディスパッチします。');
-      store.dispatch('fetchUnreadCounts');
+    };
+
+    onMounted(() => {
+      if (store.getters.isAuthenticated) {
+        store.dispatch('fetchChannels');
+        store.dispatch('fetchUnreadCounts');
+      }
     });
 
     return {
-      channels,
+      publicChannels,
+      groupChannels,
       selectedChannelId,
       currentUser,
       onlineUsers,
@@ -157,6 +201,8 @@ export default {
       channelToDelete,
       promptDeleteChannel,
       handleDeleteChannel,
+      showCreateGroupModal,
+      handleCreateGroup,
     };
   }
 };
@@ -169,9 +215,35 @@ export default {
   border-right: 1px solid #ddd;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
-.channels-section, .online-users-section {
+.user-section {
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+  background-color: #e8e9eb;
+}
+.current-user {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.username {
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.logout-button {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+.channels-section {
   padding: 10px;
+  border-bottom: 1px solid #e0e0e0;
 }
 .channels-header {
   display: flex;
@@ -194,9 +266,6 @@ h2 {
   color: #666;
   padding: 0 5px;
   line-height: 1;
-}
-.add-channel-button:hover {
-  color: #000;
 }
 ul {
   list-style-type: none;
@@ -244,56 +313,6 @@ li.active {
 li:hover .delete-channel-button {
   visibility: visible;
 }
-.delete-channel-button:hover {
-  opacity: 1;
-  color: #f04747;
-}
-.online-users-section {
-  flex-grow: 1;
-  overflow-y: auto;
-}
-.online-user {
-  padding: 5px 15px;
-  color: #333;
-  font-weight: normal;
-  font-size: 0.9em;
-  display: flex;
-  align-items: center;
-}
-.online-indicator {
-  color: #42b983;
-  margin-right: 8px;
-  font-size: 1.2em;
-  flex-wrap: wrap;
-}
-/* ★★★ ここのスタイルを修正 ★★★ */
-.user-section {
-  padding: 15px;
-  border-bottom: 1px solid #ddd; /* border-topから変更 */
-  background-color: #e8e9eb;
-}
-.current-user {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.username {
-  font-weight: bold;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.logout-button {
-  padding: 4px 8px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8em;
-}
-.logout-button:hover {
-  background-color: #f0f0f0;
-}
 .unread-badge {
   background-color: #f04747;
   color: white;
@@ -302,5 +321,16 @@ li:hover .delete-channel-button {
   font-size: 0.75em;
   font-weight: bold;
   margin-left: 5px;
+}
+.online-users-section {
+  padding: 10px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+.online-user {
+  padding: 5px 15px;
+}
+.online-indicator {
+  color: #42b983;
 }
 </style>
