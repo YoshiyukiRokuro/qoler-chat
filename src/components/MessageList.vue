@@ -49,6 +49,15 @@
     <button v-if="showScrollToBottomButton" @click="scrollToBottom" class="scroll-to-bottom-button">
       ▼
     </button>
+    
+    <ConfirmModal 
+      :show="showConfirmModal" 
+      title="メッセージの削除" 
+      message="本当にこのメッセージを削除しますか？この操作は取り消せません。" 
+      @confirm="handleConfirmDelete" 
+      @cancel="handleCancelDelete" 
+    />
+    
     <ManageGroupModal
       :show="showManageGroupModal"
       :channelId="selectedChannelId"
@@ -61,11 +70,13 @@
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useStore } from 'vuex';
 import ManageGroupModal from './ManageGroupModal.vue';
+import ConfirmModal from './ConfirmModal.vue';
 
 export default {
   name: 'MessageList',
   components: {
-    ManageGroupModal
+    ManageGroupModal,
+    ConfirmModal,
   },
   setup() {
     const store = useStore();
@@ -73,6 +84,8 @@ export default {
     const highlightedMessageId = ref(null);
     const showScrollToBottomButton = ref(false);
     const showManageGroupModal = ref(false);
+    const showConfirmModal = ref(false);
+    const messageIdToDelete = ref(null);
 
     const selectedChannelId = computed(() => store.state.selectedChannelId);
     const selectedChannel = computed(() => store.getters.selectedChannel);
@@ -93,11 +106,22 @@ export default {
     
     const startReply = (message) => store.dispatch('startReply', message);
 
-    // ★★★【修正】★★★ ConfirmModalを削除し、ブラウザの確認ダイアログを使用
     const requestDelete = (messageId) => {
-      if (window.confirm('本当にこのメッセージを削除しますか？')) {
-        store.dispatch('deleteMessage', messageId);
+      messageIdToDelete.value = messageId;
+      showConfirmModal.value = true;
+    };
+
+    const handleConfirmDelete = () => {
+      if (messageIdToDelete.value) {
+        store.dispatch('deleteMessage', messageIdToDelete.value);
       }
+      showConfirmModal.value = false;
+      messageIdToDelete.value = null;
+    };
+
+    const handleCancelDelete = () => {
+      showConfirmModal.value = false;
+      messageIdToDelete.value = null;
     };
     
     const scrollToBottom = (behavior = 'auto') => {
@@ -157,13 +181,17 @@ export default {
       highlightedMessageId,
       showScrollToBottomButton,
       scrollToBottom,
-      showManageGroupModal
+      showManageGroupModal,
+      showConfirmModal,
+      handleConfirmDelete,
+      handleCancelDelete
     };
   }
 };
 </script>
 
 <style scoped>
+/* スタイルは変更なし */
 .message-list-wrapper { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
 .message-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background-color: #f0f2f5; }
 .messages-inner { display: flex; flex-direction: column; min-height: 100%; }

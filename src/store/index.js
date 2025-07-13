@@ -11,23 +11,6 @@ const apiClient = axios.create({
   },
 });
 
-// ★★★【デバッグ用】★★★ リクエストインターセプターを追加
-// 全てのリクエストの直前にヘッダーを確認
-apiClient.interceptors.request.use(
-  (config) => {
-    console.log(
-      `[AXIOS INTERCEPTOR] Requesting: ${config.method.toUpperCase()} ${
-        config.url
-      }`,
-      config.headers
-    );
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
 const getInitialState = () => ({
   user: null,
   token: null,
@@ -52,28 +35,20 @@ const store = createStore({
       apiClient.defaults.baseURL = baseUrl;
     },
     resetState(state) {
-      console.log("[VUEX MUTATION] Resetting state and clearing auth header."); // デバッグ用ログ
       const initial = getInitialState();
       const baseUrl = state.apiBaseUrl;
       Object.assign(state, initial);
       state.apiBaseUrl = baseUrl;
-      apiClient.defaults.baseURL = baseUrl;
       delete apiClient.defaults.headers.common["Authorization"];
     },
     setToken(state, token) {
-      console.log(
-        `[VUEX MUTATION] setToken called with: ${token ? "a token" : "null"}`
-      ); // デバッグ用ログ
       state.token = token;
       if (token) {
         apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        console.log("[VUEX MUTATION] Axios default auth header SET."); // デバッグ用ログ
       } else {
         delete apiClient.defaults.headers.common["Authorization"];
-        console.log("[VUEX MUTATION] Axios default auth header CLEARED."); // デバッグ用ログ
       }
     },
-    // ... 他のmutationは変更なし ...
     setChannels(state, channels) {
       state.channels = channels;
     },
@@ -169,37 +144,6 @@ const store = createStore({
       await dispatch("fetchAllUsers");
       await dispatch("fetchUnreadCounts");
     },
-    async login({ commit, dispatch }, { id, password }) {
-      try {
-        const { data } = await apiClient.post("/login", { id, password });
-        // ★★★【デバッグ用】★★★
-        console.log("[VUEX ACTION] Login successful, received data:", data);
-        if (!data.token) {
-          console.error("[VUEX ACTION] Token is missing in login response!");
-          toast.error("サーバーからトークンが返されませんでした。");
-        }
-
-        commit("setUser", data.user);
-        commit("setToken", data.token); // これでヘッダーが設定されるはず
-
-        await dispatch("initializeApp");
-        return true;
-      } catch (error) {
-        throw new Error(
-          error.response?.data?.error || "ログインに失敗しました。"
-        );
-      }
-    },
-    async fetchUnreadCounts({ commit }) {
-      try {
-        console.log("[VUEX ACTION] Fetching unread counts..."); // デバッグ用ログ
-        const { data } = await apiClient.get("/messages/unread-counts");
-        commit("setAllUnreadCounts", data);
-      } catch (error) {
-        console.error("Failed to fetch unread counts", error);
-      }
-    },
-    // ... 他のアクションは変更なし ...
     initializeWebSocket({ commit, state, dispatch }) {
       if (state.ws && state.ws.readyState === WebSocket.OPEN) return;
       if (!state.token || !state.apiBaseUrl) return;
@@ -249,6 +193,10 @@ const store = createStore({
               dispatch("fetchChannelMembers", payload.data.channelId);
             }
             break;
+          case "refetch_channels":
+            toast.info("グループ情報が更新されました。");
+            dispatch("fetchChannels");
+            break;
         }
       };
     },
@@ -260,30 +208,21 @@ const store = createStore({
           commit("setSelectedChannel", data[0].id);
         }
       } catch (error) {
-        console.error("Failed to fetch channels", error);
         toast.error("チャンネルの取得に失敗しました。");
       }
     },
     async createChannel(_, channelName) {
-      try {
-        await apiClient.post("/channels", { name: channelName });
-      } catch (error) {
-        console.error("Failed to create channel", error);
-        throw error;
-      }
+              await apiClient.post("/channels", { name: channelName });
+
     },
     async deleteChannel(_, channelId) {
-      try {
         await apiClient.delete(`/channels/${channelId}`);
-      } catch (error) {
-        console.error("Failed to delete channel", error);
-        throw error;
-      }
+
     },
     async selectChannel({ commit, dispatch, getters }, channelId) {
       commit("setSelectedChannel", channelId);
       await dispatch("loadMessages", channelId);
-      dispatch("markChannelAsRead", channelId);
+      await dispatch("markChannelAsRead", channelId);
       const selected = getters.selectedChannel;
       if (selected && selected.is_group) {
         dispatch("fetchChannelMembers", channelId);
@@ -295,7 +234,6 @@ const store = createStore({
         const { data } = await apiClient.get(`/messages/${channelId}`);
         commit("setMessages", { channelId, messages: data });
       } catch (error) {
-        console.error("Failed to load messages:", error);
         if (error.response?.status !== 403) {
           toast.error("メッセージの読み込みに失敗しました。");
         }
@@ -309,6 +247,19 @@ const store = createStore({
         throw new Error(error.response?.data?.error || "登録に失敗しました。");
       }
     },
+    async login({ commit, dispatch }, { id, password }) {
+      try {
+        const { data } = await apiClient.post("/login", { id, password });
+        commit("setUser", data.user);
+        commit("setToken", data.token);
+        await dispatch("initializeApp");
+        return true;
+      } catch (error) {
+        throw new Error(
+          error.response?.data?.error || "ログインに失敗しました。"
+        );
+      }
+    },
     async autoLogin({ commit, dispatch }, { id }) {
       try {
         const { data } = await apiClient.post("/login/auto", { id });
@@ -317,10 +268,6 @@ const store = createStore({
         await dispatch("initializeApp");
         return true;
       } catch (error) {
-        console.error(
-          "Auto login failed:",
-          error.response?.data?.error || error.message
-        );
         return false;
       }
     },
@@ -340,7 +287,6 @@ const store = createStore({
         });
         commit("clearReplyingTo");
       } catch (error) {
-        console.error("Failed to send message", error);
         toast.error("メッセージの送信に失敗しました。");
       }
     },
@@ -348,7 +294,6 @@ const store = createStore({
       try {
         await apiClient.delete(`/messages/${messageId}`);
       } catch (error) {
-        console.error("Failed to delete message", error);
         toast.error("メッセージの削除に失敗しました。");
       }
     },
@@ -360,7 +305,15 @@ const store = createStore({
         await apiClient.post(`/messages/${channelId}/read`, { lastMessageId });
         commit("clearUnreadCount", channelId);
       } catch (error) {
-        console.error("Failed to mark as read", error);
+        /* Do nothing */
+      }
+    },
+    async fetchUnreadCounts({ commit }) {
+      try {
+        const { data } = await apiClient.get("/messages/unread-counts");
+        commit("setAllUnreadCounts", data);
+      } catch (error) {
+        /* Do nothing */
       }
     },
     startReply({ commit }, message) {
@@ -374,55 +327,37 @@ const store = createStore({
         const { data } = await apiClient.get("/users");
         commit("setAllUsers", data);
       } catch (error) {
-        console.error("Failed to fetch users", error);
+        /* Do nothing */
       }
     },
     async createGroupChannel(_, { name, memberIds }) {
-      try {
         await apiClient.post("/channels/group", { name, memberIds });
-      } catch (error) {
-        console.error("Failed to create group channel", error);
-        throw error;
-      }
+
     },
     async updateChannelName(_, { channelId, name }) {
-      try {
         await apiClient.put(`/channels/${channelId}/name`, { name });
-      } catch (error) {
-        console.error("Failed to update channel name", error);
-        throw error;
-      }
+
     },
     async fetchChannelMembers({ commit }, channelId) {
       try {
         const { data } = await apiClient.get(`/channels/${channelId}/members`);
         commit("setChannelMembers", { channelId, members: data });
       } catch (error) {
-        console.error("Failed to fetch channel members", error);
+        /* Do nothing */
       }
     },
     async addMembersToChannel(_, { channelId, userIds }) {
-      try {
         await apiClient.post(`/channels/${channelId}/members`, { userIds });
-      } catch (error) {
-        console.error("Failed to add members", error);
-        throw error;
-      }
+
     },
     async removeMembersFromChannel(_, { channelId, userIds }) {
-      try {
         await apiClient.delete(`/channels/${channelId}/members`, {
           data: { userIds },
         });
-      } catch (error) {
-        console.error("Failed to remove members", error);
-        throw error;
-      }
     },
   },
   getters: {
     isAuthenticated: (state) => !!state.token,
-    // ... 他のgetterは変更なし ...
     channels: (state) => state.channels,
     selectedChannel: (state) =>
       state.channels.find((c) => c.id === state.selectedChannelId),

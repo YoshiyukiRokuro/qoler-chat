@@ -40,7 +40,7 @@
     <div class="channels-section">
       <div class="channels-header">
         <h2>グループ</h2>
-        <button @click="showCreateGroupModal = true" class="add-channel-button" title="新しいグループを作成">+</button>
+        <button @click="promptCreateGroup" class="add-channel-button" title="新しいグループを作成">+</button>
       </div>
       <ul>
         <li
@@ -167,6 +167,16 @@ export default {
       }
     };
 
+    // ★★★【新規追加】★★★ グループ作成モーダルを開く前の処理
+    const promptCreateGroup = async () => {
+      try {
+        await store.dispatch('fetchAllUsers'); // 最新のユーザーリストを取得
+        showCreateGroupModal.value = true;   // モーダルを表示
+      } catch (error) {
+        toast.error('ユーザーリストの取得に失敗しました。');
+      }
+    };
+
     const handleCreateGroup = async ({ name, memberIds }) => {
       if (name && memberIds.length > 0) {
         try {
@@ -202,6 +212,7 @@ export default {
       promptDeleteChannel,
       handleDeleteChannel,
       showCreateGroupModal,
+      promptCreateGroup, // ★★★【追加】★★★
       handleCreateGroup,
     };
   }
@@ -209,6 +220,7 @@ export default {
 </script>
 
 <style scoped>
+/* スタイルは変更なし */
 .channel-list {
   width: 240px;
   background-color: #f2f3f5;
