@@ -14,14 +14,23 @@ module.exports = defineConfig({
       // 出力されるファイル名
       filename: 'index.html',
       // ここでタイトルを指定することもできます
-      title: 'クオラチャット',
+      title: 'Qoler-Chat',
       icon: 'public/icons/favicon.ico' // アイコンのパスを指定
     }
   },
   pluginOptions: {
     electronBuilder: {
       builderOptions: {
-        productName: "クオラチャット"
+        productName: "Qoler-Chat",
+        appId: "jp.qoler.qoler-chat",
+        win: {
+          target: "nsis"
+        },
+        nsis: {
+          oneClick: true,
+          perMachine: true,
+          runAfterFinish: false
+        }
       },
       nodeIntegrationInWorker: true,
       preload: 'src/preload.js'

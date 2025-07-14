@@ -2,12 +2,12 @@
   <div class="login-container">
     <div class="login-form">
       <h2>{{ isRegistering ? 'ユーザー登録' : 'クオラチャットログイン' }}</h2>
-
+      <!--
       <a href="#" @click.prevent="toggleMode">
         {{ isRegistering ? 'ログイン画面へ' : '新しいアカウントを作成' }}
       </a>
       <br>
-
+      -->
       <input type="text" inputmode="numeric" v-model="loginId" placeholder="職員ID (1～5桁の数字)" />
       
       <template v-if="isRegistering">
@@ -41,7 +41,7 @@ export default {
     const store = useStore();
     const router = useRouter();
     const toast = useToast();
-    const ipAddress = ref('');
+    const ipAddress = ref('192.168.90.246');
     const port = ref('3001');
     
     const name = ref('');
