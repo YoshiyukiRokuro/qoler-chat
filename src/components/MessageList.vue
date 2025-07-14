@@ -10,6 +10,13 @@
             </button>
           </div>
         </div>
+        <div v-if="messages.length === 0" class="no-messages-prompt">
+          <div class="prompt-content">
+            <h3>#{{ selectedChannel.name }} へようこそ！</h3>
+            <p>このチャンネルにはまだメッセージがありません。</p>
+            <p>最初のメッセージを投稿してみましょう！👇</p>
+          </div>
+        </div>
         <div class="messages">
           <template v-for="(message, index) in messages" :key="message.id">
             <div v-if="index === firstUnreadIndex" class="unread-separator">
@@ -214,4 +221,24 @@ h2 { margin: 0; }
 .manage-group-button { padding: 4px 12px; border: 1px solid #ccc; border-radius: 4px; background-color: #f0f0f0; cursor: pointer; }
 .unread-separator { text-align: center; margin: 10px 0; border-top: 1px solid #e04040; position: relative; }
 .unread-separator span { background-color: #f0f2f5; color: #e04040; padding: 0 10px; position: relative; top: -11px; font-size: 0.8em; font-weight: bold; }
+.no-messages-prompt {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #888;
+  padding: 20px;
+}
+.prompt-content {
+  border: 2px dashed #ddd;
+  padding: 30px 40px;
+  border-radius: 10px;
+}
+.prompt-content h3 {
+  margin-top: 0;
+  color: #555;
+}
+
 </style>

@@ -1,21 +1,21 @@
 <template>
   <div class="login-container">
     <div class="login-form">
-      <h2>{{ isRegistering ? 'ユーザー登録' : 'クオラチャットログイン' }}</h2>
+      <h2>{{ isRegistering ? 'ユーザー登録' : 'クオラチャット' }}</h2>
       <!--
       <a href="#" @click.prevent="toggleMode">
         {{ isRegistering ? 'ログイン画面へ' : '新しいアカウントを作成' }}
       </a>
       <br>
       -->
-      <input type="text" inputmode="numeric" v-model="loginId" placeholder="職員ID (1～5桁の数字)" />
+      <span class="caution-text">電子カルテのサブメニュー起動推奨</span>
+      <input type="text" inputmode="numeric" v-model="loginId" placeholder="電子カルテの職員ID (1～5桁の数字)" />
       
       <template v-if="isRegistering">
         <input type="text" v-model="name" placeholder="名前" />
       </template>
 
       <input type="password" v-model="password" placeholder="パスワード" />
-      
       <button @click="handleSubmit">{{ isRegistering ? '登録' : 'ログイン' }}</button>
 
       <template v-if="!isRegistering">
