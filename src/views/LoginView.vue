@@ -8,7 +8,8 @@
       </a>
       <br>
       -->
-      <span class="caution-text">電子カルテのサブメニュー起動推奨</span>
+      <span class="caution-text">基本ミニカルテのサブメニューから自動ログイン
+      </span>
       <input type="text" inputmode="numeric" v-model="loginId" placeholder="電子カルテの職員ID (1～5桁の数字)" />
       
       <template v-if="isRegistering">
@@ -20,10 +21,10 @@
 
       <template v-if="!isRegistering">
         <p class="caution-text">
-          ※以下は接続設定です。<br>初回起動時以外は変更する必要ありません。
+          ※以下は接続設定情報です
         </p>
-        <input type="text" v-model="ipAddress" placeholder="IPアドレス" />
-        <input type="text" v-model="port" placeholder="ポート番号" />
+        <input type="text" v-model="ipAddress" disabled="true" placeholder="IPアドレス" />
+        <input type="text" v-model="port" disabled="true" placeholder="ポート番号" />
       </template>
     </div>
   </div>

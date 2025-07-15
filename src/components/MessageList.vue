@@ -199,28 +199,7 @@ export default {
 
 <style scoped>
 /* スタイルは変更なし */
-.message-list-wrapper { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
-.message-list { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background-color: #f0f2f5; }
-.messages-inner { display: flex; flex-direction: column; min-height: 100%; }
-.messages { flex: 1; padding: 15px; }
-.header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #ddd; background-color: #fff; }
-h2 { margin: 0; }
-.message-wrapper { display: flex; margin-bottom: 15px; }
-.message { max-width: 70%; padding: 10px 15px; border-radius: 12px; background-color: #ffffff; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-.user-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-.timestamp { font-size: 0.75em; color: #999; margin-left: 10px; }
-.text { margin: 0; word-wrap: break-word; white-space: pre-wrap; font-size:1.2em;}
-.message-wrapper.own { justify-content: flex-end; }
-.message-wrapper.own .message { background-color: #dcf8c6; }
-.delete-button, .reply-button { background: none; border: none; color: #999; cursor: pointer; font-size: 1.2em; }
-.no-messages { text-align: center; margin: auto; color: #888; }
-.reply-context { background-color: #e8e8e8; border-left: 3px solid #42b983; padding: 5px 8px; margin: -5px -10px 8px -10px; border-radius: 4px; font-size: 0.9em; cursor: pointer;}
-.reply-text { margin: 2px 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #555; }
-.highlight .message { background-color: #fff0b3; }
-.scroll-to-bottom-button { position: absolute; bottom: 20px; right: 20px; background-color: rgba(66, 185, 131, 0.8); color: white; border: none; border-radius: 20px; padding: 8px 16px; cursor: pointer; }
-.manage-group-button { padding: 4px 12px; border: 1px solid #ccc; border-radius: 4px; background-color: #f0f0f0; cursor: pointer; }
-.unread-separator { text-align: center; margin: 10px 0; border-top: 1px solid #e04040; position: relative; }
-.unread-separator span { background-color: #f0f2f5; color: #e04040; padding: 0 10px; position: relative; top: -11px; font-size: 0.8em; font-weight: bold; }
+
 .no-messages-prompt {
   flex-grow: 1;
   display: flex;
@@ -240,5 +219,137 @@ h2 { margin: 0; }
   margin-top: 0;
   color: #555;
 }
-
+.message-list-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.message-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background-color: #f0f2f5;
+}
+.messages-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.messages {
+  flex: 1;
+  padding: 15px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+  background-color: #fff;
+}
+h2 {
+  margin: 0;
+}
+.message-wrapper {
+  display: flex;
+  margin-bottom: 15px;
+}
+.message {
+  max-width: 70%;
+  padding: 10px 15px;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+.user-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.timestamp {
+  font-size: 0.75em;
+  color: #999;
+  margin-left: 10px;
+}
+.text {
+  margin: 0;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  font-size: 1.2em;
+}
+.message-wrapper.own {
+  justify-content: flex-end;
+}
+.message-wrapper.own .message {
+  background-color: #dcf8c6;
+}
+.delete-button,
+.reply-button {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 1.2em;
+}
+.no-messages {
+  text-align: center;
+  margin: auto;
+  color: #888;
+}
+.reply-context {
+  background-color: #e8e8e8;
+  border-left: 3px solid #42b983;
+  padding: 5px 8px;
+  margin: -5px -10px 8px -10px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+.reply-text {
+  margin: 2px 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #555;
+}
+.highlight .message {
+  background-color: #fff0b3;
+}
+.scroll-to-bottom-button {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(66, 185, 131, 0.8);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.manage-group-button {
+  padding: 4px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+.unread-separator {
+  text-align: center;
+  margin: 10px 0;
+  border-top: 1px solid #e04040;
+  position: relative;
+}
+.unread-separator span {
+  background-color: #f0f2f5;
+  color: #e04040;
+  padding: 0 10px;
+  position: relative;
+  top: -11px;
+  font-size: 0.8em;
+  font-weight: bold;
+}
 </style>
