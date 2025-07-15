@@ -23,7 +23,7 @@
         <p class="caution-text">
           ※以下は接続設定情報です
         </p>
-        <input type="text" v-model="ipAddress" disabled="true" placeholder="IPアドレス" />
+        <input type="text" v-model="ipAddress" disabled="false" placeholder="IPアドレス" />
         <input type="text" v-model="port" disabled="true" placeholder="ポート番号" />
       </template>
     </div>
@@ -42,9 +42,9 @@ export default {
     const store = useStore();
     const router = useRouter();
     const toast = useToast();
-    const ipAddress = ref('192.168.90.246');
+    const ipAddress = ref('192.168.100.37');
     const port = ref('3001');
-    
+
     const name = ref('');
     const loginId = ref('');
     const password = ref('');
