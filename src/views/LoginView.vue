@@ -23,8 +23,8 @@
         <p class="caution-text">
           ※以下は接続設定情報です
         </p>
-        <input type="text" v-model="ipAddress" disabled="false" placeholder="IPアドレス" />
-        <input type="text" v-model="port" disabled="true" placeholder="ポート番号" />
+        <input type="text" v-model="ipAddress" placeholder="IPアドレス" />
+        <input type="text" v-model="port" placeholder="ポート番号" />
       </template>
     </div>
   </div>
