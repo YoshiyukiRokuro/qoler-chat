@@ -42,7 +42,7 @@ export default {
     const store = useStore();
     const router = useRouter();
     const toast = useToast();
-    const ipAddress = ref("192.168.100.37");
+    const ipAddress = ref("192.168.90.246");
     const port = ref("3001");
 
     const name = ref("");

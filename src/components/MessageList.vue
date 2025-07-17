@@ -89,13 +89,30 @@ export default {
     );
 
     const firstUnreadIndex = computed(() => {
-      if (!lastReadMessageId.value || messages.value.length === 0) return -1;
+      // メッセージがなければ未読は存在しない
+      if (messages.value.length === 0) {
+        return -1;
+      }
+
+      // lastReadMessageId が存在しない (一度も読んでいない) 場合は、
+      // 最初のメッセージが未読の開始点となる
+      if (!lastReadMessageId.value) {
+        return 0;
+      }
+
+      // 最後に読んだメッセージの位置を探す
       const lastReadIndex = messages.value.findIndex(
         (m) => m.id === lastReadMessageId.value
       );
-      return lastReadIndex === -1 || lastReadIndex === messages.value.length - 1
-        ? -1
-        : lastReadIndex + 1;
+
+      // 最後に読んだメッセージが見つからない、またはそれがリストの最後のメッセージである場合は、
+      // それ以降に未読メッセージはない
+      if (lastReadIndex === -1 || lastReadIndex === messages.value.length - 1) {
+        return -1;
+      }
+
+      // 未読の開始位置は、最後に読んだメッセージの次のインデックス
+      return lastReadIndex + 1;
     });
 
     const formatTimestamp = (timestamp) => {

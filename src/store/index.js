@@ -118,6 +118,9 @@ const store = createStore({
     setLastReadMessageId(state, { channelId, messageId }) {
       state.lastReadMessageIds[channelId] = messageId;
     },
+    setAllLastReadMessageIds(state, ids) {
+      state.lastReadMessageIds = ids;
+    },
     setReplyingTo(state, message) {
       state.replyingToMessage = message;
     },
@@ -147,6 +150,7 @@ const store = createStore({
       dispatch("initializeWebSocket");
       await dispatch("fetchAllUsers");
       await dispatch("fetchUnreadCounts");
+      await dispatch("fetchLastReadMessageIds");
     },
     initializeWebSocket({ commit, state, dispatch }) {
       if (state.ws && state.ws.readyState === WebSocket.OPEN) return;
@@ -326,6 +330,14 @@ const store = createStore({
         /* Do nothing */
       }
     },
+    async fetchLastReadMessageIds({ commit }) {
+      try {
+        const { data } = await apiClient.get("/messages/last-read-ids");
+        commit("setAllLastReadMessageIds", data);
+      } catch (error) {
+        /* Do nothing */
+      }
+    },
     startReply({ commit }, message) {
       commit("setReplyingTo", message);
     },
@@ -379,9 +391,9 @@ const store = createStore({
     allUsers: (state) => state.allUsers,
     membersForSelectedChannel: (state) =>
       state.channelMembers[state.selectedChannelId] || [],
-  },
-  lastReadMessageIdForSelectedChannel: (state) =>
-    state.lastReadMessageIds[state.selectedChannelId],
+    lastReadMessageIdForSelectedChannel: (state) =>
+      state.lastReadMessageIds[state.selectedChannelId],
+  }
 });
 
 export default store;
