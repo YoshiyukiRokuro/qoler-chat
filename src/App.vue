@@ -1,5 +1,3 @@
-// src/App.vue
-
 <template>
   <div id="app-wrapper">
     <router-view/>
@@ -7,12 +5,12 @@
 </template>
 
 <script>
-import { onMounted } from 'vue';
-import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
+import { onMounted } from "vue";
+import { useStore } from "vuex";
+import { useRouter } from "vue-router";
 
 export default {
-  name: 'App',
+  name: "App",
   setup() {
     const store = useStore();
     const router = useRouter();
@@ -20,22 +18,22 @@ export default {
     onMounted(() => {
       // メインプロセスからの自動ログイン要求を待つ
       window.electronAPI.onAutoLoginRequest(async (empId) => {
-        console.log('Auto login request received for EmpCd:', empId);
+        console.log("Auto login request received for EmpCd:", empId);
 
         // APIのURLを設定（localStorageから読み込む）
-        const savedIp = localStorage.getItem('ipAddress') || ''; // デフォルト値
-        const savedPort = localStorage.getItem('port') || '3001'; // デフォルト値
-        store.dispatch('updateApiBaseUrl', { ip: savedIp, port: savedPort });
+        const savedIp = localStorage.getItem("ipAddress") || ""; // デフォルト値
+        const savedPort = localStorage.getItem("port") || "3001"; // デフォルト値
+        store.dispatch("updateApiBaseUrl", { ip: savedIp, port: savedPort });
 
         // 自動ログインアクションを実行
-        const success = await store.dispatch('autoLogin', { id: empId });
+        const success = await store.dispatch("autoLogin", { id: empId });
         if (success) {
-          router.push('/');
+          router.push("/");
         }
       });
     });
-  }
-}
+  },
+};
 </script>
 
 <style>
@@ -50,4 +48,5 @@ export default {
 #app-wrapper {
   height: 100%;
 }
+
 </style>

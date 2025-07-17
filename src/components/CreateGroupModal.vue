@@ -2,12 +2,7 @@
   <div v-if="show" class="modal-overlay" @click.self="closeModal">
     <div class="modal-content">
       <h3>新しいグループを作成</h3>
-      <input
-        type="text"
-        v-model.trim="groupName"
-        placeholder="グループ名"
-        ref="inputRef"
-      />
+      <input type="text" v-model.trim="groupName" placeholder="グループ名" ref="inputRef" />
       <h4>メンバーを選択</h4>
       <div class="user-list">
         <div v-for="user in users" :key="user.id" class="user-item">
@@ -28,44 +23,54 @@
 </template>
 
 <script>
-import { ref, computed, watch, nextTick } from 'vue';
-import { useStore } from 'vuex';
+import { ref, computed, watch, nextTick } from "vue";
+import { useStore } from "vuex";
 
 export default {
-  name: 'CreateGroupModal',
+  name: "CreateGroupModal",
   props: {
     show: Boolean,
   },
-  emits: ['close', 'confirm'],
+  emits: ["close", "confirm"],
   setup(props, { emit }) {
     const store = useStore();
-    const groupName = ref('');
+    const groupName = ref("");
     const selectedMemberIds = ref([]);
     const inputRef = ref(null);
 
     const currentUser = computed(() => store.getters.currentUser);
-    const users = computed(() => store.getters.allUsers.filter(u => u.id !== currentUser.value?.id));
-    const isFormValid = computed(() => groupName.value && selectedMemberIds.value.length > 0);
-    
+    const users = computed(() =>
+      store.getters.allUsers.filter((u) => u.id !== currentUser.value?.id)
+    );
+    const isFormValid = computed(
+      () => groupName.value && selectedMemberIds.value.length > 0
+    );
+
     const closeModal = () => {
-      emit('close');
+      emit("close");
     };
 
     const handleConfirm = () => {
       if (isFormValid.value) {
-        emit('confirm', { name: groupName.value, memberIds: selectedMemberIds.value });
+        emit("confirm", {
+          name: groupName.value,
+          memberIds: selectedMemberIds.value,
+        });
       }
     };
 
-    watch(() => props.show, (newVal) => {
-      if (newVal) {
-        groupName.value = '';
-        selectedMemberIds.value = [];
-        nextTick(() => {
-          inputRef.value?.focus();
-        });
+    watch(
+      () => props.show,
+      (newVal) => {
+        if (newVal) {
+          groupName.value = "";
+          selectedMemberIds.value = [];
+          nextTick(() => {
+            inputRef.value?.focus();
+          });
+        }
       }
-    });
+    );
 
     return {
       groupName,

@@ -16,34 +16,37 @@
 </template>
 
 <script>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch } from "vue";
 
 export default {
-  name: 'DeleteChannelModal',
+  name: "DeleteChannelModal",
   props: {
     show: Boolean,
     channel: Object,
   },
-  emits: ['close', 'confirm'],
+  emits: ["close", "confirm"],
   setup(props, { emit }) {
-    const confirmationText = ref('');
-    const isConfirmed = computed(() => confirmationText.value === 'SAKUJYO');
+    const confirmationText = ref("");
+    const isConfirmed = computed(() => confirmationText.value === "SAKUJYO");
 
     const closeModal = () => {
-      emit('close');
+      emit("close");
     };
 
     const confirmDelete = () => {
       if (isConfirmed.value) {
-        emit('confirm');
+        emit("confirm");
       }
     };
 
-    watch(() => props.show, (newVal) => {
-      if (!newVal) {
-        confirmationText.value = '';
+    watch(
+      () => props.show,
+      (newVal) => {
+        if (!newVal) {
+          confirmationText.value = "";
+        }
       }
-    });
+    );
 
     return {
       confirmationText,
@@ -53,6 +56,7 @@ export default {
     };
   },
 };
+
 </script>
 
 <style scoped>
@@ -125,4 +129,5 @@ button {
   background-color: #ccc;
   cursor: not-allowed;
 }
+
 </style>

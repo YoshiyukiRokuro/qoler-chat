@@ -13,23 +13,13 @@
         <button @click="showCreateModal = true" class="add-channel-button" title="新しいチャンネルを作成">+</button>
       </div>
       <ul>
-        <li
-          v-for="channel in publicChannels"
-          :key="channel.id"
-          @click="selectChannel(channel.id)"
-          :class="{ active: channel.id === selectedChannelId }"
-        >
+        <li v-for="channel in publicChannels" :key="channel.id" @click="selectChannel(channel.id)" :class="{ active: channel.id === selectedChannelId }">
           <span class="channel-name"># {{ channel.name }}</span>
           <div class="channel-actions">
             <span v-if="unreadCounts[channel.id] > 0" class="unread-badge">
               {{ unreadCounts[channel.id] }}
             </span>
-            <button
-              v-if="channel.is_deletable"
-              @click.stop="promptDeleteChannel(channel)"
-              class="delete-channel-button"
-              title="チャンネルを削除"
-            >
+            <button v-if="channel.is_deletable" @click.stop="promptDeleteChannel(channel)" class="delete-channel-button" title="チャンネルを削除">
               ×
             </button>
           </div>
@@ -43,22 +33,13 @@
         <button @click="promptCreateGroup" class="add-channel-button" title="新しいグループを作成">+</button>
       </div>
       <ul>
-        <li
-          v-for="channel in groupChannels"
-          :key="channel.id"
-          @click="selectChannel(channel.id)"
-          :class="{ active: channel.id === selectedChannelId }"
-        >
+        <li v-for="channel in groupChannels" :key="channel.id" @click="selectChannel(channel.id)" :class="{ active: channel.id === selectedChannelId }">
           <span class="channel-name"># {{ channel.name }}</span>
-           <div class="channel-actions">
+          <div class="channel-actions">
             <span v-if="unreadCounts[channel.id] > 0" class="unread-badge">
               {{ unreadCounts[channel.id] }}
             </span>
-            <button
-              @click.stop="promptDeleteChannel(channel)"
-              class="delete-channel-button"
-              title="グループを削除"
-            >
+            <button @click.stop="promptDeleteChannel(channel)" class="delete-channel-button" title="グループを削除">
               ×
             </button>
           </div>
@@ -74,39 +55,26 @@
         </li>
       </ul>
     </div>
-    
-    <CreateChannelModal
-      :show="showCreateModal"
-      @close="showCreateModal = false"
-      @confirm="handleCreateChannel"
-    />
-    
-    <DeleteChannelModal
-      :show="showDeleteModal"
-      :channel="channelToDelete"
-      @close="showDeleteModal = false"
-      @confirm="handleDeleteChannel"
-    />
 
-    <CreateGroupModal
-      :show="showCreateGroupModal"
-      @close="showCreateGroupModal = false"
-      @confirm="handleCreateGroup"
-    />
+    <CreateChannelModal :show="showCreateModal" @close="showCreateModal = false" @confirm="handleCreateChannel" />
+
+    <DeleteChannelModal :show="showDeleteModal" :channel="channelToDelete" @close="showDeleteModal = false" @confirm="handleDeleteChannel" />
+
+    <CreateGroupModal :show="showCreateGroupModal" @close="showCreateGroupModal = false" @confirm="handleCreateGroup" />
   </div>
 </template>
 
 <script>
-import { computed, onMounted, ref } from 'vue';
-import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, ref } from "vue";
+import { useStore } from "vuex";
+import { useRouter } from "vue-router";
 import { useToast } from "vue-toastification";
-import DeleteChannelModal from './DeleteChannelModal.vue';
-import CreateChannelModal from './CreateChannelModal.vue';
-import CreateGroupModal from './CreateGroupModal.vue';
+import DeleteChannelModal from "./DeleteChannelModal.vue";
+import CreateChannelModal from "./CreateChannelModal.vue";
+import CreateGroupModal from "./CreateGroupModal.vue";
 
 export default {
-  name: 'ChannelList',
+  name: "ChannelList",
   components: {
     DeleteChannelModal,
     CreateChannelModal,
@@ -130,22 +98,24 @@ export default {
     const showCreateGroupModal = ref(false);
 
     const selectChannel = (id) => {
-      store.dispatch('selectChannel', id);
+      store.dispatch("selectChannel", id);
     };
 
     const handleLogout = () => {
-      store.dispatch('logout');
-      router.push('/login');
+      store.dispatch("logout");
+      router.push("/login");
     };
-    
+
     const handleCreateChannel = async (channelName) => {
       if (channelName && channelName.trim()) {
         try {
-          await store.dispatch('createChannel', channelName.trim());
+          await store.dispatch("createChannel", channelName.trim());
           showCreateModal.value = false;
           toast.success(`チャンネル "${channelName.trim()}" を作成しました。`);
         } catch (error) {
-          toast.error(error.response?.data?.error || 'チャンネルの作成に失敗しました。');
+          toast.error(
+            error.response?.data?.error || "チャンネルの作成に失敗しました。"
+          );
         }
       }
     };
@@ -158,41 +128,47 @@ export default {
     const handleDeleteChannel = async () => {
       if (channelToDelete.value) {
         try {
-          await store.dispatch('deleteChannel', channelToDelete.value.id);
+          await store.dispatch("deleteChannel", channelToDelete.value.id);
           showDeleteModal.value = false;
-          toast.success(`チャンネル "${channelToDelete.value.name}" を削除しました。`);
+          toast.success(
+            `チャンネル "${channelToDelete.value.name}" を削除しました。`
+          );
         } catch (error) {
-          toast.error(error.response?.data?.error || 'チャンネルの削除に失敗しました。');
+          toast.error(
+            error.response?.data?.error || "チャンネルの削除に失敗しました。"
+          );
         }
       }
     };
 
-    // ★★★【新規追加】★★★ グループ作成モーダルを開く前の処理
+    // グループ作成モーダルを開く前の処理
     const promptCreateGroup = async () => {
       try {
-        await store.dispatch('fetchAllUsers'); // 最新のユーザーリストを取得
-        showCreateGroupModal.value = true;   // モーダルを表示
+        await store.dispatch("fetchAllUsers"); // 最新のユーザーリストを取得
+        showCreateGroupModal.value = true; // モーダルを表示
       } catch (error) {
-        toast.error('ユーザーリストの取得に失敗しました。');
+        toast.error("ユーザーリストの取得に失敗しました。");
       }
     };
 
     const handleCreateGroup = async ({ name, memberIds }) => {
       if (name && memberIds.length > 0) {
         try {
-          await store.dispatch('createGroupChannel', { name, memberIds });
+          await store.dispatch("createGroupChannel", { name, memberIds });
           showCreateGroupModal.value = false;
           toast.success(`グループ "${name}" を作成しました。`);
         } catch (error) {
-          toast.error(error.response?.data?.error || 'グループの作成に失敗しました。');
+          toast.error(
+            error.response?.data?.error || "グループの作成に失敗しました。"
+          );
         }
       }
     };
 
     onMounted(() => {
       if (store.getters.isAuthenticated) {
-        store.dispatch('fetchChannels');
-        store.dispatch('fetchUnreadCounts');
+        store.dispatch("fetchChannels");
+        store.dispatch("fetchUnreadCounts");
       }
     });
 
@@ -212,15 +188,14 @@ export default {
       promptDeleteChannel,
       handleDeleteChannel,
       showCreateGroupModal,
-      promptCreateGroup, // ★★★【追加】★★★
+      promptCreateGroup,
       handleCreateGroup,
     };
-  }
+  },
 };
 </script>
 
 <style scoped>
-/* スタイルは変更なし */
 .channel-list {
   width: 240px;
   background-color: #f2f3f5;
@@ -345,4 +320,5 @@ li:hover .delete-channel-button {
 .online-indicator {
   color: #42b983;
 }
+
 </style>

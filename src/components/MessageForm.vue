@@ -11,50 +11,43 @@
 
     <div class="message-form">
       <button class="emoji-button" @click="toggleEmojiPicker">😀</button>
-      <textarea
-        v-model="newMessage"
-        @keydown.enter.exact.prevent="sendMessage"
-        placeholder="メッセージを入力... (Shift+Enterで改行)"
-        rows="1"
-        ref="textarea"
-        @input="autoResize"
-      ></textarea>
+      <textarea v-model="newMessage" @keydown.enter.exact.prevent="sendMessage" placeholder="メッセージを入力... (Shift+Enterで改行)" rows="1" ref="textarea" @input="autoResize"></textarea>
       <button @click="sendMessage" class="send-button">送信</button>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, nextTick, computed } from 'vue';
-import { useStore } from 'vuex';
-import EmojiPicker from 'vue3-emoji-picker';
-import 'vue3-emoji-picker/css';
+import { ref, nextTick, computed } from "vue";
+import { useStore } from "vuex";
+import EmojiPicker from "vue3-emoji-picker";
+import "vue3-emoji-picker/css";
 
 export default {
-  name: 'MessageForm',
+  name: "MessageForm",
   components: {
-    EmojiPicker
+    EmojiPicker,
   },
   setup() {
     const store = useStore();
-    const newMessage = ref('');
+    const newMessage = ref("");
     const textarea = ref(null);
     const showEmojiPicker = ref(false);
 
     const replyingToMessage = computed(() => store.getters.replyingToMessage);
 
     const cancelReply = () => {
-      store.dispatch('cancelReply');
+      store.dispatch("cancelReply");
     };
-    
+
     const sendMessage = () => {
       if (newMessage.value.trim()) {
-        store.dispatch('sendMessage', newMessage.value);
-        newMessage.value = '';
+        store.dispatch("sendMessage", newMessage.value);
+        newMessage.value = "";
         showEmojiPicker.value = false;
         nextTick(() => {
-          if(textarea.value) {
-            textarea.value.style.height = 'auto';
+          if (textarea.value) {
+            textarea.value.style.height = "auto";
             textarea.value.focus();
           }
         });
@@ -63,8 +56,8 @@ export default {
 
     const autoResize = () => {
       if (textarea.value) {
-        textarea.value.style.height = 'auto';
-        textarea.value.style.height = textarea.value.scrollHeight + 'px';
+        textarea.value.style.height = "auto";
+        textarea.value.style.height = textarea.value.scrollHeight + "px";
       }
     };
 
@@ -80,10 +73,12 @@ export default {
       const end = textareaEl.selectionEnd;
       const text = newMessage.value;
 
-      newMessage.value = text.substring(0, start) + emoji.i + text.substring(end);
+      newMessage.value =
+        text.substring(0, start) + emoji.i + text.substring(end);
 
       nextTick(() => {
-        textareaEl.selectionStart = textareaEl.selectionEnd = start + emoji.i.length;
+        textareaEl.selectionStart = textareaEl.selectionEnd =
+          start + emoji.i.length;
         textareaEl.focus();
         autoResize();
       });
@@ -100,8 +95,9 @@ export default {
       replyingToMessage,
       cancelReply,
     };
-  }
-}
+  },
+};
+
 </script>
 
 <style scoped>
@@ -121,7 +117,7 @@ export default {
   padding: 10px 15px;
   border-top: 1px solid #ddd;
   background-color: #f9f9f9;
-  align-items: flex-end; 
+  align-items: flex-end;
 }
 
 textarea {
@@ -131,15 +127,16 @@ textarea {
   border-radius: 18px;
   resize: none;
   overflow-y: auto;
-  min-height: 22px; 
-  max-height: 120px; 
+  min-height: 22px;
+  max-height: 120px;
   line-height: 1.5;
   font-family: inherit;
   font-size: inherit;
   margin: 0 10px;
 }
 
-.emoji-button, .send-button {
+.emoji-button,
+.send-button {
   padding: 8px 12px;
   border: none;
   border-radius: 8px;
@@ -184,4 +181,5 @@ textarea {
 .cancel-reply-button:hover {
   color: #000;
 }
+
 </style>

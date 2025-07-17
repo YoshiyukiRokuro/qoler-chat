@@ -90,7 +90,7 @@ button {
 }
 
 .button-confirm {
-  background-color: #e53935; /* 赤系の色 */
+  background-color: #e53935;
   color: white;
 }
 .button-confirm:hover {

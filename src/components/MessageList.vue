@@ -22,14 +22,10 @@
             <div v-if="index === firstUnreadIndex" class="unread-separator">
               <span>ここから未読</span>
             </div>
-            <div
-              class="message-wrapper"
-              :data-message-id="message.id"
-              :class="{ 
+            <div class="message-wrapper" :data-message-id="message.id" :class="{ 
                 own: currentUser && message.user === currentUser.username,
                 highlight: message.id === highlightedMessageId
-              }"
-            >
+              }">
               <div class="message">
                 <div v-if="message.replyToId" class="reply-context" @click="scrollToMessage(message.replyToId)">
                   <small>↪ <strong>{{ message.repliedToUser }}</strong> への返信</small>
@@ -56,31 +52,21 @@
     <button v-if="showScrollToBottomButton" @click="scrollToBottom('smooth')" class="scroll-to-bottom-button">
       ▼
     </button>
-    
-    <ConfirmModal 
-      :show="showConfirmModal" 
-      title="メッセージの削除" 
-      message="本当にこのメッセージを削除しますか？この操作は取り消せません。" 
-      @confirm="handleConfirmDelete" 
-      @cancel="handleCancelDelete" 
-    />
-    
-    <ManageGroupModal
-      :show="showManageGroupModal"
-      :channelId="selectedChannelId"
-      @close="showManageGroupModal = false"
-    />
+
+    <ConfirmModal :show="showConfirmModal" title="メッセージの削除" message="本当にこのメッセージを削除しますか？この操作は取り消せません。" @confirm="handleConfirmDelete" @cancel="handleCancelDelete" />
+
+    <ManageGroupModal :show="showManageGroupModal" :channelId="selectedChannelId" @close="showManageGroupModal = false" />
   </div>
 </template>
 
 <script>
-import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { useStore } from 'vuex';
-import ManageGroupModal from './ManageGroupModal.vue';
-import ConfirmModal from './ConfirmModal.vue';
+import { computed, ref, watch, nextTick, onMounted, onUnmounted } from "vue";
+import { useStore } from "vuex";
+import ManageGroupModal from "./ManageGroupModal.vue";
+import ConfirmModal from "./ConfirmModal.vue";
 
 export default {
-  name: 'MessageList',
+  name: "MessageList",
   components: {
     ManageGroupModal,
     ConfirmModal,
@@ -98,20 +84,32 @@ export default {
     const selectedChannel = computed(() => store.getters.selectedChannel);
     const messages = computed(() => store.getters.messagesForSelectedChannel);
     const currentUser = computed(() => store.getters.currentUser);
-    const lastReadMessageId = computed(() => store.getters.lastReadMessageIdForSelectedChannel);
+    const lastReadMessageId = computed(
+      () => store.getters.lastReadMessageIdForSelectedChannel
+    );
 
     const firstUnreadIndex = computed(() => {
       if (!lastReadMessageId.value || messages.value.length === 0) return -1;
-      const lastReadIndex = messages.value.findIndex(m => m.id === lastReadMessageId.value);
-      return (lastReadIndex === -1 || lastReadIndex === messages.value.length - 1) ? -1 : lastReadIndex + 1;
+      const lastReadIndex = messages.value.findIndex(
+        (m) => m.id === lastReadMessageId.value
+      );
+      return lastReadIndex === -1 || lastReadIndex === messages.value.length - 1
+        ? -1
+        : lastReadIndex + 1;
     });
 
     const formatTimestamp = (timestamp) => {
-      if (!timestamp) return '';
-      return new Date(timestamp).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+      if (!timestamp) return "";
+      return new Date(timestamp).toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     };
-    
-    const startReply = (message) => store.dispatch('startReply', message);
+
+    const startReply = (message) => store.dispatch("startReply", message);
 
     const requestDelete = (messageId) => {
       messageIdToDelete.value = messageId;
@@ -120,7 +118,7 @@ export default {
 
     const handleConfirmDelete = () => {
       if (messageIdToDelete.value) {
-        store.dispatch('deleteMessage', messageIdToDelete.value);
+        store.dispatch("deleteMessage", messageIdToDelete.value);
       }
       showConfirmModal.value = false;
       messageIdToDelete.value = null;
@@ -130,48 +128,68 @@ export default {
       showConfirmModal.value = false;
       messageIdToDelete.value = null;
     };
-    
-    const scrollToBottom = (behavior = 'auto') => {
-        nextTick(() => {
-            const el = messageContainer.value;
-            if(el) {
-                el.scrollTo({ top: el.scrollHeight, behavior });
-            }
-        });
-    };
-    
-    watch(messages, () => {
-      setTimeout(() => scrollToBottom(), 0);
-    }, { deep: true });
 
-    watch(() => store.state.selectedChannelId, () => {
+    const scrollToBottom = (behavior = "auto") => {
+      nextTick(() => {
+        const el = messageContainer.value;
+        if (el) {
+          el.scrollTo({ top: el.scrollHeight, behavior });
+        }
+      });
+    };
+
+    watch(
+      messages,
+      () => {
+        setTimeout(() => scrollToBottom(), 0);
+      },
+      { deep: true }
+    );
+
+    watch(
+      () => store.state.selectedChannelId,
+      () => {
         scrollToBottom();
-    })
+      }
+    );
 
     const renderMessageText = (text) => {
-      let newText = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-      newText = newText.replace(/(\\\\[^\\\s]+(\\[^\\\s]+)+)/g, '<a href="file:///$&" target="_blank">$&</a>');
+      let newText = text.replace(
+        /(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank">$1</a>'
+      );
+      newText = newText.replace(
+        /(\\\\[^\\\s]+(\\[^\\\s]+)+)/g,
+        '<a href="file:///$&" target="_blank">$&</a>'
+      );
       return newText;
     };
 
     const scrollToMessage = (messageId) => {
       const target = document.querySelector(`[data-message-id='${messageId}']`);
       if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
         highlightedMessageId.value = messageId;
-        setTimeout(() => { highlightedMessageId.value = null; }, 1500);
+        setTimeout(() => {
+          highlightedMessageId.value = null;
+        }, 1500);
       }
     };
 
     const handleScroll = () => {
-        const el = messageContainer.value;
-        if(el) {
-            showScrollToBottomButton.value = el.scrollHeight - el.scrollTop - el.clientHeight > 200;
-        }
+      const el = messageContainer.value;
+      if (el) {
+        showScrollToBottomButton.value =
+          el.scrollHeight - el.scrollTop - el.clientHeight > 200;
+      }
     };
 
-    onMounted(() => messageContainer.value?.addEventListener('scroll', handleScroll));
-    onUnmounted(() => messageContainer.value?.removeEventListener('scroll', handleScroll));
+    onMounted(() =>
+      messageContainer.value?.addEventListener("scroll", handleScroll)
+    );
+    onUnmounted(() =>
+      messageContainer.value?.removeEventListener("scroll", handleScroll)
+    );
 
     return {
       selectedChannel,
@@ -191,15 +209,14 @@ export default {
       showManageGroupModal,
       showConfirmModal,
       handleConfirmDelete,
-      handleCancelDelete
+      handleCancelDelete,
     };
-  }
+  },
 };
+
 </script>
 
 <style scoped>
-/* スタイルは変更なし */
-
 .no-messages-prompt {
   flex-grow: 1;
   display: flex;

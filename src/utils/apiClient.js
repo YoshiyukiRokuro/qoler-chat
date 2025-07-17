@@ -1,15 +1,15 @@
 // src/utils/apiClient.js
 
-import axios from 'axios';
-import store from '../store'; // Vuexストアをインポート
+import axios from "axios";
+import store from "../store"; // Vuexストアをインポート
 
 const apiClient = axios.create({
-  baseURL: ''
+  baseURL: "",
 });
 
 // リクエストインターセプターを設定
 apiClient.interceptors.request.use(
-  config => {
+  (config) => {
     // リクエストが送信される直前にストアからトークンを取得
     const token = store.state.token;
     if (token) {
@@ -18,7 +18,7 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  error => {
+  (error) => {
     return Promise.reject(error);
   }
 );

@@ -9,32 +9,31 @@
 </template>
 
 <script>
-import ChannelList from '../components/ChannelList.vue'
-import MessageList from '../components/MessageList.vue'
-import MessageForm from '../components/MessageForm.vue'
-import { useStore } from 'vuex'
-import { onMounted } from 'vue'
+import ChannelList from "../components/ChannelList.vue";
+import MessageList from "../components/MessageList.vue";
+import MessageForm from "../components/MessageForm.vue";
+import { useStore } from "vuex";
+import { onMounted } from "vue";
 
 export default {
-  name: 'ChatView',
+  name: "ChatView",
   components: {
     ChannelList,
     MessageList,
-    MessageForm
+    MessageForm,
   },
   setup() {
     const store = useStore();
     onMounted(() => {
       if (store.state.selectedChannelId) {
-        store.dispatch('loadMessages', store.state.selectedChannelId);
+        store.dispatch("loadMessages", store.state.selectedChannelId);
       }
     });
-  }
-}
+  },
+};
 </script>
 
 <style>
-/* App.vueからスタイルを移動 */
 #chat-container {
   display: flex;
   height: 100%;
@@ -46,4 +45,5 @@ export default {
   flex-direction: column;
   height: 100%;
 }
+
 </style>

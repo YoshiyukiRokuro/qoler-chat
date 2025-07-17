@@ -3,13 +3,7 @@
     <div class="modal-content">
       <h3>新しいチャンネルを作成</h3>
       <p>新しいチャンネルの名前を入力してください。</p>
-      <input
-        type="text"
-        v-model.trim="channelName"
-        placeholder="チャンネル名"
-        ref="inputRef"
-        @keyup.enter="handleConfirm"
-      />
+      <input type="text" v-model.trim="channelName" placeholder="チャンネル名" ref="inputRef" @keyup.enter="handleConfirm" />
       <div class="modal-actions">
         <button @click="closeModal" class="button-cancel">キャンセル</button>
         <button @click="handleConfirm" class="button-confirm" :disabled="!channelName">
@@ -21,38 +15,41 @@
 </template>
 
 <script>
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick } from "vue";
 
 export default {
-  name: 'CreateChannelModal',
+  name: "CreateChannelModal",
   props: {
     show: Boolean,
   },
-  emits: ['close', 'confirm'],
+  emits: ["close", "confirm"],
   setup(props, { emit }) {
-    const channelName = ref('');
+    const channelName = ref("");
     const inputRef = ref(null);
 
     const closeModal = () => {
-      emit('close');
+      emit("close");
     };
 
     const handleConfirm = () => {
       if (channelName.value) {
-        emit('confirm', channelName.value);
-        channelName.value = ''; // Reset after confirm
+        emit("confirm", channelName.value);
+        channelName.value = ""; // Reset after confirm
       }
     };
 
     // モーダルが表示された時にテキストをリセットし、入力欄にフォーカスする
-    watch(() => props.show, (newVal) => {
-      if (newVal) {
-        channelName.value = '';
-        nextTick(() => {
-          inputRef.value?.focus();
-        });
+    watch(
+      () => props.show,
+      (newVal) => {
+        if (newVal) {
+          channelName.value = "";
+          nextTick(() => {
+            inputRef.value?.focus();
+          });
+        }
       }
-    });
+    );
 
     return {
       channelName,
