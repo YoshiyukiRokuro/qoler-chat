@@ -53,7 +53,7 @@
         <p>チャンネルを選択してください。</p>
       </div>
     </div>
-    <button v-if="showScrollToBottomButton" @click="scrollToBottom" class="scroll-to-bottom-button">
+    <button v-if="showScrollToBottomButton" @click="scrollToBottom('smooth')" class="scroll-to-bottom-button">
       ▼
     </button>
     

@@ -17,6 +17,7 @@ const getInitialState = () => ({
   onlineUsers: [],
   channels: [],
   selectedChannelId: null,
+  previousChannelId: null,
   messages: {},
   unreadCounts: {},
   lastReadMessageIds: {},
@@ -66,6 +67,9 @@ const store = createStore({
       }
     },
     setSelectedChannel(state, channelId) {
+      if (state.selectedChannelId !== channelId) {
+        state.previousChannelId = state.selectedChannelId;
+      }
       state.selectedChannelId = channelId;
     },
     setMessages(state, { channelId, messages }) {
@@ -219,13 +223,16 @@ const store = createStore({
         await apiClient.delete(`/channels/${channelId}`);
 
     },
-    async selectChannel({ commit, dispatch, getters }, channelId) {
-      commit("setSelectedChannel", channelId);
-      await dispatch("loadMessages", channelId);
-      await dispatch("markChannelAsRead", channelId);
+    async selectChannel({ commit, dispatch, getters, state }, channelId) { // stateを引数に追加
+      // チャンネルを切り替える前に、以前表示していたチャンネルを既読にする
+      if (state.previousChannelId) {
+        await dispatch('markChannelAsRead', state.previousChannelId);
+      }
+      commit('setSelectedChannel', channelId);
+      await dispatch('loadMessages', channelId);
       const selected = getters.selectedChannel;
       if (selected && selected.is_group) {
-        dispatch("fetchChannelMembers", channelId);
+        dispatch('fetchChannelMembers', channelId);
       }
     },
     async loadMessages({ commit }, channelId) {
@@ -302,10 +309,13 @@ const store = createStore({
         const messages = state.messages[channelId];
         if (!messages || messages.length === 0) return;
         const lastMessageId = messages[messages.length - 1].id;
+        console.log(`Marking channel ${channelId} as read up to message ${lastMessageId}`);
         await apiClient.post(`/messages/${channelId}/read`, { lastMessageId });
-        commit("clearUnreadCount", channelId);
+        commit('clearUnreadCount', channelId);
+        commit('setLastReadMessageId', { channelId, messageId: lastMessageId });
+
       } catch (error) {
-        /* Do nothing */
+        console.error(`Failed to mark channel ${channelId} as read:`, error);
       }
     },
     async fetchUnreadCounts({ commit }) {
@@ -373,6 +383,8 @@ const store = createStore({
     membersForSelectedChannel: (state) =>
       state.channelMembers[state.selectedChannelId] || [],
   },
+    lastReadMessageIdForSelectedChannel: (state) =>
+      state.lastReadMessageIds[state.selectedChannelId],
 });
 
 export default store;
